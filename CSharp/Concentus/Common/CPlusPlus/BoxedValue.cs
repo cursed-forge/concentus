@@ -40,6 +40,11 @@ namespace Concentus.Common.CPlusPlus
             Val = v;
         }
 
+        // CursedForge fork: the constructor of a pooled instance (ScratchArena).
+        public BoxedValueInt()
+        {
+        }
+
         public override string ToString()
         {
             return Val.ToString();
@@ -55,6 +60,11 @@ namespace Concentus.Common.CPlusPlus
             Val = v;
         }
 
+        // CursedForge fork: the constructor of a pooled instance (ScratchArena).
+        public BoxedValueShort()
+        {
+        }
+
         public override string ToString()
         {
             return Val.ToString();
@@ -68,6 +78,11 @@ namespace Concentus.Common.CPlusPlus
         internal BoxedValueSbyte(sbyte v = 0)
         {
             Val = v;
+        }
+
+        // CursedForge fork: the constructor of a pooled instance (ScratchArena).
+        public BoxedValueSbyte()
+        {
         }
 
         public override string ToString()

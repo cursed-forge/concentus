@@ -165,10 +165,10 @@ namespace Concentus
             float[] d2A = tonal.d2_angle;
             float[] tonality;
             float[] noisiness;
-            float[] band_tonality = new float[OpusConstants.NB_TBANDS];
-            float[] logE = new float[OpusConstants.NB_TBANDS];
-            float[] BFCC = new float[8];
-            float[] features = new float[25];
+            float[] band_tonality = ScratchArena.Rent<float>(OpusConstants.NB_TBANDS);
+            float[] logE = ScratchArena.Rent<float>(OpusConstants.NB_TBANDS);
+            float[] BFCC = ScratchArena.Rent<float>(8);
+            float[] features = ScratchArena.Rent<float>(25);
             float frame_tonality;
             float max_frame_tonality;
             /*float tw_sum=0;*/
@@ -177,7 +177,7 @@ namespace Concentus
             float slope = 0;
             float frame_stationarity;
             float relativeE;
-            float[] frame_probs = new float[2];
+            float[] frame_probs = ScratchArena.Rent<float>(2);
             float alpha, alphaE, alphaE2;
             float frame_loudness;
             float bandwidth_mask;
@@ -211,10 +211,10 @@ namespace Concentus
             if (tonal.write_pos >= OpusConstants.DETECT_SIZE)
                 tonal.write_pos -= OpusConstants.DETECT_SIZE;
 
-            input = new int[960];
-            output = new int[960];
-            tonality = new float[240];
-            noisiness = new float[240];
+            input = ScratchArena.Rent<int>(960);
+            output = ScratchArena.Rent<int>(960);
+            tonality = ScratchArena.Rent<float>(240);
+            noisiness = ScratchArena.Rent<float>(240);
             for (i = 0; i < N2; i++)
             {
                 float w = Tables.analysis_window[i];

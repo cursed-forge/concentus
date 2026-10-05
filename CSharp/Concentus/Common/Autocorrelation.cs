@@ -63,7 +63,7 @@ namespace Concentus.Common
             int fastN = n - lag;
             int shift;
             short[] xptr;
-            short[] xx = new short[n];
+            short[] xx = ScratchArena.Rent<short>(n);
             Inlines.OpusAssert(n > 0);
             xptr = x;
 
@@ -140,7 +140,7 @@ namespace Concentus.Common
             int fastN = n - lag;
             int shift;
             int[] actualX;
-            int[] xx = new int[n];
+            int[] xx = ScratchArena.Rent<int>(n);
 
             Inlines.OpusAssert(n > 0);
             Inlines.OpusAssert(overlap >= 0);
@@ -232,8 +232,8 @@ namespace Concentus.Common
         {
             int n, i, lsh;
             int tmp1_QS, tmp2_QS;
-            Span<int> state_QS = new int[order + 1];// = { 0 };
-            Span<long> corr_QC = new long[order + 1];// = { 0 };
+            Span<int> state_QS = ScratchArena.Rent<int>(order + 1);// = { 0 };
+            Span<long> corr_QC = ScratchArena.Rent<long>(order + 1);// = { 0 };
 
             /* Order must be even */
             Inlines.OpusAssert((order & 1) == 0);

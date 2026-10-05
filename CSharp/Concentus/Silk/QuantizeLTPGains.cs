@@ -53,7 +53,7 @@ namespace Concentus.Silk
             )
         {
             int j, k, cbk_size;
-            sbyte[] temp_idx = new sbyte[SilkConstants.MAX_NB_SUBFR];
+            sbyte[] temp_idx = ScratchArena.Rent<sbyte>(SilkConstants.MAX_NB_SUBFR);
             byte[] cl_ptr_Q5;
             sbyte[][] cbk_ptr_Q7;
             byte[] cbk_gain_ptr_Q7;
@@ -90,9 +90,9 @@ namespace Concentus.Silk
                     max_gain_Q7 = Inlines.silk_log2lin((((int)((TuningParameters.MAX_SUM_LOG_GAIN_DB / 6.0f) * ((long)1 << (7)) + 0.5))/*Inlines.SILK_CONST(TuningParameters.MAX_SUM_LOG_GAIN_DB / 6.0f, 7)*/ - sum_log_gain_tmp_Q7)
                                                 + ((int)((7) * ((long)1 << (7)) + 0.5))/*Inlines.SILK_CONST(7, 7)*/) - gain_safety;
                     
-                    BoxedValueSbyte temp_idx_box = new BoxedValueSbyte(temp_idx[j]);
-                    BoxedValueInt rate_dist_Q14_subfr_box = new BoxedValueInt();
-                    BoxedValueInt gain_Q7_box = new BoxedValueInt();
+                    BoxedValueSbyte temp_idx_box = ScratchArena.BoxSbyte(temp_idx[j]);
+                    BoxedValueInt rate_dist_Q14_subfr_box = ScratchArena.BoxInt(0);
+                    BoxedValueInt gain_Q7_box = ScratchArena.BoxInt(0);
                     VQ_WMat_EC.silk_VQ_WMat_EC(
                         temp_idx_box,         /* O    index of best codebook vector                           */
                         rate_dist_Q14_subfr_box,   /* O    best weighted quantization error + mu * rate            */

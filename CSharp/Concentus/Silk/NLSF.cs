@@ -399,10 +399,10 @@ namespace Concentus.Silk
             int pred_Q10, diff_Q10, out0_Q10, out1_Q10, rate0_Q5, rate1_Q5;
             int RD_tmp_Q25, min_Q25, min_max_Q25, max_min_Q25, pred_coef_Q16;
             Span<int> ind_sort = stackalloc int[SilkConstants.NLSF_QUANT_DEL_DEC_STATES];
-            sbyte[][] ind = new sbyte[SilkConstants.NLSF_QUANT_DEL_DEC_STATES][];
+            sbyte[][] ind = ScratchArena.Rent<sbyte[]>(SilkConstants.NLSF_QUANT_DEL_DEC_STATES);
             for (i = 0; i < SilkConstants.NLSF_QUANT_DEL_DEC_STATES; i++)
             {
-                ind[i] = new sbyte[SilkConstants.MAX_LPC_ORDER];
+                ind[i] = ScratchArena.Rent<sbyte>(SilkConstants.MAX_LPC_ORDER);
             }
 
             Span<short> prev_out_Q10 = stackalloc short[2 * SilkConstants.NLSF_QUANT_DEL_DEC_STATES];
@@ -672,15 +672,15 @@ namespace Concentus.Silk
             silk_NLSF_stabilize(pNLSF_Q15, psNLSF_CB.deltaMin_Q15, psNLSF_CB.order);
 
             // First stage: VQ
-            err_Q26 = new int[psNLSF_CB.nVectors];
+            err_Q26 = ScratchArena.Rent<int>(psNLSF_CB.nVectors);
             silk_NLSF_VQ(err_Q26, pNLSF_Q15, psNLSF_CB.CB1_NLSF_Q8, psNLSF_CB.nVectors, psNLSF_CB.order);
 
             // Sort the quantization errors
-            tempIndices1 = new int[nSurvivors];
+            tempIndices1 = ScratchArena.Rent<int>(nSurvivors);
             Sort.silk_insertion_sort_increasing(err_Q26, tempIndices1, psNLSF_CB.nVectors, nSurvivors);
 
-            RD_Q25 = new int[nSurvivors];
-            tempIndices2 = Arrays.InitTwoDimensionalArray<sbyte>(nSurvivors, SilkConstants.MAX_LPC_ORDER); 
+            RD_Q25 = ScratchArena.Rent<int>(nSurvivors);
+            tempIndices2 = ScratchArena.Rent2D<sbyte>(nSurvivors, SilkConstants.MAX_LPC_ORDER); 
             
 
             // Loop over survivors
@@ -746,7 +746,7 @@ namespace Concentus.Silk
             }
 
             // Find the lowest rate-distortion error
-            int[] bestIndex = new int[1];
+            int[] bestIndex = ScratchArena.Rent<int>(1);
             Sort.silk_insertion_sort_increasing(RD_Q25, bestIndex, nSurvivors, 1);
 
             NLSFIndices[0] = (sbyte)tempIndices1[bestIndex[0]];
@@ -805,10 +805,10 @@ namespace Concentus.Silk
             
             byte[] ordering;
             int k, i, dd;
-            int[] cos_LSF_QA = new int[d];
-            int[] P = new int[d / 2 + 1];
-            int[] Q = new int[d / 2 + 1];
-            int[] a32_QA1 = new int[d];
+            int[] cos_LSF_QA = ScratchArena.Rent<int>(d);
+            int[] P = ScratchArena.Rent<int>(d / 2 + 1);
+            int[] Q = ScratchArena.Rent<int>(d / 2 + 1);
+            int[] a32_QA1 = ScratchArena.Rent<int>(d);
 
             int Ptmp, Qtmp, f_int, f_frac, cos_val, delta;
             int maxabs, absval, idx = 0, sc_Q16;
@@ -1025,9 +1025,9 @@ namespace Concentus.Silk
             int xlo, xhi, xmid;
             int ylo, yhi, ymid, thr;
             int nom, den;
-            int[] P = new int[SilkConstants.SILK_MAX_ORDER_LPC / 2 + 1];
-            int[] Q = new int[SilkConstants.SILK_MAX_ORDER_LPC / 2 + 1];
-            int[][] PQ = new int[2][];
+            int[] P = ScratchArena.Rent<int>(SilkConstants.SILK_MAX_ORDER_LPC / 2 + 1);
+            int[] Q = ScratchArena.Rent<int>(SilkConstants.SILK_MAX_ORDER_LPC / 2 + 1);
+            int[][] PQ = ScratchArena.Rent<int[]>(2);
             int[] p;
 
             /* Store pointers to array */
@@ -1196,9 +1196,9 @@ namespace Concentus.Silk
             bool doInterpolate;
             int NLSF_mu_Q20;
             int i_sqr_Q15;
-            short[] pNLSF0_temp_Q15 = new short[SilkConstants.MAX_LPC_ORDER];
-            short[] pNLSFW_QW = new short[SilkConstants.MAX_LPC_ORDER];
-            short[] pNLSFW0_temp_QW = new short[SilkConstants.MAX_LPC_ORDER];
+            short[] pNLSF0_temp_Q15 = ScratchArena.Rent<short>(SilkConstants.MAX_LPC_ORDER);
+            short[] pNLSFW_QW = ScratchArena.Rent<short>(SilkConstants.MAX_LPC_ORDER);
+            short[] pNLSFW0_temp_QW = ScratchArena.Rent<short>(SilkConstants.MAX_LPC_ORDER);
 
             Inlines.OpusAssert(psEncC.speech_activity_Q8 >= 0);
             Inlines.OpusAssert(psEncC.speech_activity_Q8 <= ((int)((1.0f) * ((long)1 << (8)) + 0.5))/*Inlines.SILK_CONST(1.0f, 8)*/);

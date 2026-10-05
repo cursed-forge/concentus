@@ -65,12 +65,12 @@ namespace Concentus.Silk
             int k, n, s, lz, rshifts, reached_max_gain;
             int C0, num, nrg, rc_Q31, invGain_Q30, Atmp_QA, Atmp1, tmp1, tmp2, x1, x2;
             int x_offset;
-            int[] C_first_row = new int[SilkConstants.SILK_MAX_ORDER_LPC];
-            int[] C_last_row = new int[SilkConstants.SILK_MAX_ORDER_LPC];
-            int[] Af_QA = new int[SilkConstants.SILK_MAX_ORDER_LPC];
-            int[] CAf = new int[SilkConstants.SILK_MAX_ORDER_LPC + 1];
-            int[] CAb = new int[SilkConstants.SILK_MAX_ORDER_LPC + 1];
-            int[] xcorr = new int[SilkConstants.SILK_MAX_ORDER_LPC];
+            int[] C_first_row = ScratchArena.Rent<int>(SilkConstants.SILK_MAX_ORDER_LPC);
+            int[] C_last_row = ScratchArena.Rent<int>(SilkConstants.SILK_MAX_ORDER_LPC);
+            int[] Af_QA = ScratchArena.Rent<int>(SilkConstants.SILK_MAX_ORDER_LPC);
+            int[] CAf = ScratchArena.Rent<int>(SilkConstants.SILK_MAX_ORDER_LPC + 1);
+            int[] CAb = ScratchArena.Rent<int>(SilkConstants.SILK_MAX_ORDER_LPC + 1);
+            int[] xcorr = ScratchArena.Rent<int>(SilkConstants.SILK_MAX_ORDER_LPC);
             long C0_64;
 
             Inlines.OpusAssert(subfr_length * nb_subfr <= MAX_FRAME_SIZE);

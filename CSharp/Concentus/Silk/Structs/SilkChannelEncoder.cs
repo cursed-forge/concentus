@@ -883,13 +883,13 @@ namespace Concentus.Silk.Structs
             int useCBR                                  /* I    Flag to force constant-bitrate operation                                    */
         )
         {
-            SilkEncoderControl sEncCtrl = new SilkEncoderControl();
+            SilkEncoderControl sEncCtrl = ScratchArena.RentObject<SilkEncoderControl>().ScratchReset();
             int i, iter, maxIter, found_upper, found_lower, ret = 0;
             int x_frame;
-            EntropyCoder sRangeEnc_copy = new EntropyCoder();
-            EntropyCoder sRangeEnc_copy2 = new EntropyCoder();
-            SilkNSQState sNSQ_copy = new SilkNSQState();
-            SilkNSQState sNSQ_copy2 = new SilkNSQState();
+            EntropyCoder sRangeEnc_copy = ScratchArena.RentObject<EntropyCoder>().ScratchReset();
+            EntropyCoder sRangeEnc_copy2 = ScratchArena.RentObject<EntropyCoder>().ScratchReset();
+            SilkNSQState sNSQ_copy = ScratchArena.RentObject<SilkNSQState>().ScratchReset();
+            SilkNSQState sNSQ_copy2 = ScratchArena.RentObject<SilkNSQState>().ScratchReset();
             int nBits, nBits_lower, nBits_upper, gainMult_lower, gainMult_upper;
             int gainsID, gainsID_lower, gainsID_upper;
             short gainMult_Q8;
@@ -927,7 +927,7 @@ namespace Concentus.Silk.Structs
                 byte[] ec_buf_copy;
                 int res_pitch_frame;
 
-                res_pitch = new short[this.la_pitch + this.frame_length + this.ltp_mem_length];
+                res_pitch = ScratchArena.Rent<short>(this.la_pitch + this.frame_length + this.ltp_mem_length);
                 /* start of pitch LPC residual frame */
                 res_pitch_frame = this.ltp_mem_length;
 
@@ -954,7 +954,7 @@ namespace Concentus.Silk.Structs
                 /*****************************************/
                 /* Prefiltering for noise shaper         */
                 /*****************************************/
-                xfw_Q3 = new int[this.frame_length];
+                xfw_Q3 = ScratchArena.Rent<int>(this.frame_length);
                 Filters.silk_prefilter(this, sEncCtrl, xfw_Q3, this.x_buf, x_frame);
 
                 /****************************************/
@@ -976,7 +976,7 @@ namespace Concentus.Silk.Structs
                 seed_copy = this.indices.Seed;
                 ec_prevLagIndex_copy = this.ec_prevLagIndex;
                 ec_prevSignalType_copy = this.ec_prevSignalType;
-                ec_buf_copy = new byte[1275]; // fixme: this size might be optimized to the actual size
+                ec_buf_copy = ScratchArena.Rent<byte>(1275); // fixme: this size might be optimized to the actual size
                 for (iter = 0; ; iter++)
                 {
                     if (gainsID == gainsID_lower)
@@ -1142,7 +1142,7 @@ namespace Concentus.Silk.Structs
 
                     /* Quantize gains */
                     this.sShape.LastGainIndex = sEncCtrl.lastGainIndexPrev;
-                    BoxedValueSbyte boxed_gainIndex = new BoxedValueSbyte(this.sShape.LastGainIndex);
+                    BoxedValueSbyte boxed_gainIndex = ScratchArena.BoxSbyte(this.sShape.LastGainIndex);
                     GainQuantization.silk_gains_quant(this.indices.GainsIndices, sEncCtrl.Gains_Q16,
                           boxed_gainIndex, condCoding == SilkConstants.CODE_CONDITIONALLY ? 1 : 0, this.nb_subfr);
                     this.sShape.LastGainIndex = boxed_gainIndex.Val;
@@ -1185,9 +1185,9 @@ namespace Concentus.Silk.Structs
             int condCoding                              /* I    The type of conditional coding used so far for this frame                   */
         )
         {
-            int[] TempGains_Q16 = new int[/*SilkConstants.MAX_NB_SUBFR*/ this.nb_subfr];
+            int[] TempGains_Q16 = ScratchArena.Rent<int>(/*SilkConstants.MAX_NB_SUBFR*/ this.nb_subfr);
             SideInfoIndices psIndices_LBRR = this.indices_LBRR[this.nFramesEncoded];
-            SilkNSQState sNSQ_LBRR = new SilkNSQState();
+            SilkNSQState sNSQ_LBRR = ScratchArena.RentObject<SilkNSQState>().ScratchReset();
 
             /*******************************************/
             /* Control use of inband LBRR              */
@@ -1215,7 +1215,7 @@ namespace Concentus.Silk.Structs
 
                 /* Decode to get gains in sync with decoder         */
                 /* Overwrite unquantized gains with quantized gains */
-                BoxedValueSbyte boxed_gainIndex = new BoxedValueSbyte(this.LBRRprevLastGainIndex);
+                BoxedValueSbyte boxed_gainIndex = ScratchArena.BoxSbyte(this.LBRRprevLastGainIndex);
                 GainQuantization.silk_gains_dequant(thisCtrl.Gains_Q16, psIndices_LBRR.GainsIndices,
                     boxed_gainIndex, condCoding == SilkConstants.CODE_CONDITIONALLY ? 1 : 0, this.nb_subfr);
                 this.LBRRprevLastGainIndex = boxed_gainIndex.Val;

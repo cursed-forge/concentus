@@ -105,8 +105,8 @@ namespace Concentus.Celt
             Span<int> mem)
         {
             int i, j;
-            int[] rden = new int[ord];
-            int[] y = new int[N + ord];
+            int[] rden = ScratchArena.Rent<int>(ord);
+            int[] y = ScratchArena.Rent<int>(N + ord);
             Inlines.OpusAssert((ord & 3) == 0);
 
             for (i = 0; i < ord; i++)

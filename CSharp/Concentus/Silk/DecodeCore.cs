@@ -69,10 +69,10 @@ namespace Concentus.Silk
 
             Inlines.OpusAssert(psDec.prev_gain_Q16 != 0);
 
-            sLTP= new short[psDec.ltp_mem_length];
-            sLTP_Q15 = new int[psDec.ltp_mem_length + psDec.frame_length];
-            res_Q14 = new int[psDec.subfr_length];
-            sLPC_Q14 = new int[psDec.subfr_length + SilkConstants.MAX_LPC_ORDER];
+            sLTP= ScratchArena.Rent<short>(psDec.ltp_mem_length);
+            sLTP_Q15 = ScratchArena.Rent<int>(psDec.ltp_mem_length + psDec.frame_length);
+            res_Q14 = ScratchArena.Rent<int>(psDec.subfr_length);
+            sLPC_Q14 = ScratchArena.Rent<int>(psDec.subfr_length + SilkConstants.MAX_LPC_ORDER);
 
             offset_Q10 = Tables.silk_Quantization_Offsets_Q10[psDec.indices.signalType >> 1][psDec.indices.quantOffsetType];
 

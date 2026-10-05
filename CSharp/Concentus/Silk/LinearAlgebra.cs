@@ -50,8 +50,8 @@ namespace Concentus.Silk
             )
         {
             Inlines.OpusAssert(M <= SilkConstants.MAX_MATRIX_SIZE);
-            int[] L_Q16 = new int[M * M];
-            int[] Y = new int[SilkConstants.MAX_MATRIX_SIZE];
+            int[] L_Q16 = ScratchArena.Rent<int>(M * M);
+            int[] Y = ScratchArena.Rent<int>(SilkConstants.MAX_MATRIX_SIZE);
 
             // [Porting note] This is an interleaved array. Formerly it was an array of data structures laid out thus:
             //private struct inv_D_t
@@ -59,7 +59,7 @@ namespace Concentus.Silk
             //    int Q36_part;
             //    int Q48_part;
             //}
-            int[] inv_D = new int[SilkConstants.MAX_MATRIX_SIZE * 2];
+            int[] inv_D = ScratchArena.Rent<int>(SilkConstants.MAX_MATRIX_SIZE * 2);
             
             /***************************************************
             Factorize A by LDL such that A = L*D*L',
@@ -101,8 +101,8 @@ namespace Concentus.Silk
             int[] scratch2;
             int scratch2_ptr;
             int diag_min_value, tmp_32, err;
-            int[] v_Q0 = new int[M]; /*SilkConstants.MAX_MATRIX_SIZE*/
-            int[] D_Q0 = new int[M]; /*SilkConstants.MAX_MATRIX_SIZE*/
+            int[] v_Q0 = ScratchArena.Rent<int>(M); /*SilkConstants.MAX_MATRIX_SIZE*/
+            int[] D_Q0 = ScratchArena.Rent<int>(M); /*SilkConstants.MAX_MATRIX_SIZE*/
             int one_div_diag_Q36, one_div_diag_Q40, one_div_diag_Q48;
 
             Inlines.OpusAssert(M <= SilkConstants.MAX_MATRIX_SIZE);

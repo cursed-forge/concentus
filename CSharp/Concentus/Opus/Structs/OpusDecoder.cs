@@ -81,6 +81,9 @@ namespace Concentus.Structs
         internal SilkDecoder SilkDecoder = new SilkDecoder();
         internal CeltDecoder Celt_Decoder = new CeltDecoder();
 
+        // CursedForge fork: the per-call scratch memory of this decoder (ScratchArena).
+        private readonly ScratchArena _scratch = new ScratchArena();
+
         // Used by multistream decoder
         internal OpusDecoder() { }
 
@@ -201,7 +204,7 @@ namespace Concentus.Structs
             SilkDecoder silk_dec;
             CeltDecoder celt_dec;
             int i, silk_ret = 0, celt_ret = 0;
-            EntropyCoder dec = new EntropyCoder(); // porting note: stack var
+            EntropyCoder dec = ScratchArena.RentObject<EntropyCoder>().ScratchReset(); // porting note: stack var
             int silk_frame_size;
             int pcm_silk_size;
             short[] pcm_silk;
@@ -311,7 +314,7 @@ namespace Concentus.Structs
                 else
                     pcm_transition_silk_size = F5 * this.channels;
             }
-            pcm_transition_celt = new short[pcm_transition_celt_size];
+            pcm_transition_celt = ScratchArena.Rent<short>(pcm_transition_celt_size);
             if (transition != 0 && mode == OpusMode.MODE_CELT_ONLY)
             {
                 pcm_transition = pcm_transition_celt;
@@ -330,7 +333,7 @@ namespace Concentus.Structs
 
             /* Don't allocate any memory when in CELT-only mode */
             pcm_silk_size = (mode != OpusMode.MODE_CELT_ONLY && (celt_accum == 0)) ? Inlines.IMAX(F10, frame_size) * this.channels : 0;
-            pcm_silk = new short[pcm_silk_size];
+            pcm_silk = ScratchArena.Rent<short>(pcm_silk_size);
 
             /* SILK processing */
             if (mode != OpusMode.MODE_CELT_ONLY)
@@ -475,7 +478,7 @@ namespace Concentus.Structs
                 pcm_transition_silk_size = 0;
             }
 
-            pcm_transition_silk = new short[pcm_transition_silk_size];
+            pcm_transition_silk = ScratchArena.Rent<short>(pcm_transition_silk_size);
 
             if (transition != 0 && mode != OpusMode.MODE_CELT_ONLY)
             {
@@ -485,7 +488,7 @@ namespace Concentus.Structs
 
             /* Only allocation memory for redundancy if/when needed */
             redundant_audio_size = redundancy != 0 ? F5 * this.channels : 0;
-            redundant_audio = new short[redundant_audio_size];
+            redundant_audio = ScratchArena.Rent<short>(redundant_audio_size);
 
             /* 5 ms redundant frame for CELT->SILK*/
             if (redundancy != 0 && celt_to_silk != 0)
@@ -613,7 +616,7 @@ namespace Concentus.Structs
             OpusMode packet_mode;
             /* 48 x 2.5 ms = 120 ms */
             // fixme: make sure these values can fit in an int16
-            short[] size = new short[48];
+            short[] size = ScratchArena.Rent<short>(48); 
             if (decode_fec < 0 || decode_fec > 1)
                 return OpusError.OPUS_BAD_ARG;
             /* For FEC/PLC, frame_size has to be to have a multiple of 2.5 ms */
@@ -625,7 +628,7 @@ namespace Concentus.Structs
                 do
                 {
                     int ret;
-                    ret = opus_decode_frame(null, 0, 0, pcm_out, pcm_out_ptr + (pcm_count * this.channels), frame_size - pcm_count, 0);
+                    ret = opus_decode_frame(null, 0, 0, pcm_out, pcm_out_ptr + (pcm_count * this.channels), frame_size - pcm_count, 0); 
                     if (ret < 0)
                         return ret;
                     pcm_count += ret;
@@ -764,6 +767,22 @@ namespace Concentus.Structs
         /// <returns>The number of decoded samples</returns>
         public int Decode(ReadOnlySpan<byte> in_data, Span<short> out_pcm, int frame_size, bool decode_fec = false)
         {
+            // CursedForge fork: every scratch array of this call comes from this
+            // instance's arena, so a warm codec allocates nothing (ScratchArena).
+            ScratchArena previous = ScratchArena.Enter(_scratch); 
+
+            try
+            {
+                return DecodeShort(in_data, out_pcm, frame_size, decode_fec);
+            }
+            finally
+            {
+                ScratchArena.Exit(previous);
+            }
+        }
+
+        private int DecodeShort(ReadOnlySpan<byte> in_data, Span<short> out_pcm, int frame_size, bool decode_fec = false)
+        {
             if (frame_size <= 0)
             {
                 throw new ArgumentException("Frame size must be > 0");
@@ -772,7 +791,7 @@ namespace Concentus.Structs
             try
             {
                 int dummy;
-                int ret = opus_decode_native(in_data, 0, in_data.Length, out_pcm, 0, frame_size, decode_fec ? 1 : 0, 0, out dummy, 0);
+                int ret = opus_decode_native(in_data, 0, in_data.Length, out_pcm, 0, frame_size, decode_fec ? 1 : 0, 0, out dummy, 0); 
 
                 if (ret < 0)
                 {
@@ -844,6 +863,22 @@ namespace Concentus.Structs
         /// <returns>The number of decoded samples</returns>
         public int Decode(ReadOnlySpan<byte> in_data, Span<float> out_pcm, int frame_size, bool decode_fec = false)
         {
+            // CursedForge fork: every scratch array of this call comes from this
+            // instance's arena, so a warm codec allocates nothing (ScratchArena).
+            ScratchArena previous = ScratchArena.Enter(_scratch);
+
+            try
+            {
+                return DecodeFloat(in_data, out_pcm, frame_size, decode_fec);
+            }
+            finally
+            {
+                ScratchArena.Exit(previous);
+            }
+        }
+
+        private int DecodeFloat(ReadOnlySpan<byte> in_data, Span<float> out_pcm, int frame_size, bool decode_fec = false)
+        {
             short[] output;
             int ret, i;
             int nb_samples;
@@ -860,7 +895,7 @@ namespace Concentus.Structs
                 else
                     throw new OpusException("An invalid packet was provided (unable to parse # of samples)", OpusError.OPUS_INVALID_PACKET);
             }
-            output = new short[frame_size * this.channels];
+            output = ScratchArena.Rent<short>(frame_size * this.channels);
 
             try
             {

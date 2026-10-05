@@ -174,7 +174,7 @@ namespace Concentus.Celt
             int tf_max;
             int len2;
             tf_chan = 0;
-            tmp = new int[len];
+            tmp = ScratchArena.Rent<int>(len);
 
             len2 = len / 2;
             for (c = 0; c < C; c++)
@@ -284,7 +284,7 @@ namespace Concentus.Celt
         {
             int i, c;
             int mean_diff = 0;
-            int[] spread_old = new int[26];
+            int[] spread_old = ScratchArena.Rent<int>(26);
             /* Apply an aggressive (-6 dB/Bark) spreading function to the old frame to
                avoid false detection caused by irrelevant bands */
             if (C == 1)
@@ -499,7 +499,7 @@ namespace Concentus.Celt
             int[] tmp;
             int[] tmp_1;
             int sel;
-            int[] selcost = new int[2];
+            int[] selcost = ScratchArena.Rent<int>(2);
             int tf_select = 0;
             int bias;
 
@@ -507,11 +507,11 @@ namespace Concentus.Celt
             bias = Inlines.MULT16_16_Q14(((short)(0.5 + (.04f) * (((int)1) << (15))))/*Inlines.QCONST16(.04f, 15)*/, Inlines.MAX16((short)(0 - ((short)(0.5 + (.25f) * (((int)1) << (14))))/*Inlines.QCONST16(.25f, 14)*/), (((short)(0.5 + (.5f) * (((int)1) << (14))))/*Inlines.QCONST16(.5f, 14)*/ - tf_estimate)));
             /*printf("%f ", bias);*/
 
-            metric = new int[len];
-            tmp = new int[(m.eBands[len] - m.eBands[len - 1]) << LM];
-            tmp_1 = new int[(m.eBands[len] - m.eBands[len - 1]) << LM];
-            path0 = new int[len];
-            path1 = new int[len];
+            metric = ScratchArena.Rent<int>(len);
+            tmp = ScratchArena.Rent<int>((m.eBands[len] - m.eBands[len - 1]) << LM);
+            tmp_1 = ScratchArena.Rent<int>((m.eBands[len] - m.eBands[len - 1]) << LM);
+            path0 = ScratchArena.Rent<int>(len);
+            path1 = ScratchArena.Rent<int>(len);
 
             tf_sum = 0;
             for (i = 0; i < len; i++)
@@ -878,8 +878,8 @@ namespace Concentus.Celt
             int i, c;
             int tot_boost = 0;
             int maxDepth;
-            int[][] follower = Arrays.InitTwoDimensionalArray<int>(2, nbEBands);
-            int[] noise_floor = new int[C * nbEBands]; // opt: partitioned array
+            int[][] follower = ScratchArena.Rent2D<int>(2, nbEBands);
+            int[] noise_floor = ScratchArena.Rent<int>(C * nbEBands); // opt: partitioned array
 
             Arrays.MemSetInt(offsets, 0, nbEBands);
             /* Dynamic allocation code */
@@ -1022,7 +1022,7 @@ namespace Concentus.Celt
                 return;
             }
 
-            int[] scratch = new int[N];
+            int[] scratch = ScratchArena.Rent<int>(N);
             coef0 = coef[0];
             Nd = N / downsample;
             c = 0; do
@@ -1129,7 +1129,7 @@ namespace Concentus.Celt
             overlap = mode.overlap;
             nbEBands = mode.nbEBands;
             N = mode.shortMdctSize << LM;
-            freq = new int[N]; /*< Interleaved signal MDCTs */
+            freq = ScratchArena.Rent<int>(N); /*< Interleaved signal MDCTs */
             M = 1 << LM;
 
             if (isTransient != 0)
@@ -1227,7 +1227,7 @@ namespace Concentus.Celt
         internal static int celt_plc_pitch_search(int[][] decode_mem, int C)
         {
             int pitch_index;
-            int[] lp_pitch_buf = new int[CeltConstants.DECODE_BUFFER_SIZE >> 1];
+            int[] lp_pitch_buf = ScratchArena.Rent<int>(CeltConstants.DECODE_BUFFER_SIZE >> 1);
             Pitch.pitch_downsample(decode_mem, lp_pitch_buf,
                   CeltConstants.DECODE_BUFFER_SIZE, C);
             Pitch.pitch_search(lp_pitch_buf, CeltConstants.PLC_PITCH_LAG_MAX >> 1, lp_pitch_buf,

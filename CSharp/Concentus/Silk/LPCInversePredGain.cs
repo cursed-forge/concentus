@@ -125,25 +125,35 @@ namespace Concentus.Silk
             int order               /* I   Prediction order                                             */
         )
         {
-            int k;
-            int[][] Atmp_QA = Arrays.InitTwoDimensionalArray<int>(2, SilkConstants.SILK_MAX_ORDER_LPC);
-            int[] Anew_QA;
-            int DC_resp = 0;
+            // CursedForge fork: the stabilisation loops call this a number of times that changes per frame, so its scratch goes back to the arena on return.
+            int scratchMark = ScratchArena.Mark();
 
-            Anew_QA = Atmp_QA[order & 1];
+            try
+            {
+                int k;
+                int[][] Atmp_QA = ScratchArena.Rent2D<int>(2, SilkConstants.SILK_MAX_ORDER_LPC);
+                int[] Anew_QA;
+                int DC_resp = 0;
 
-            /* Increase Q domain of the AR coefficients */
-            for (k = 0; k < order; k++)
-            {
-                DC_resp += (int)A_Q12[k];
-                Anew_QA[k] = Inlines.silk_LSHIFT32((int)A_Q12[k], QA - 12);
+                Anew_QA = Atmp_QA[order & 1];
+
+                /* Increase Q domain of the AR coefficients */
+                for (k = 0; k < order; k++)
+                {
+                    DC_resp += (int)A_Q12[k];
+                    Anew_QA[k] = Inlines.silk_LSHIFT32((int)A_Q12[k], QA - 12);
+                }
+                /* If the DC is unstable, we don't even need to do the full calculations */
+                if (DC_resp >= 4096)
+                {
+                    return 0;
+                }
+                return LPC_inverse_pred_gain_QA(Atmp_QA, order);
             }
-            /* If the DC is unstable, we don't even need to do the full calculations */
-            if (DC_resp >= 4096)
+            finally
             {
-                return 0;
+                ScratchArena.Release(scratchMark);
             }
-            return LPC_inverse_pred_gain_QA(Atmp_QA, order);
         }
 
         internal static int silk_LPC_inverse_pred_gain_Q24(          /* O    Returns inverse prediction gain in energy domain, Q30       */
@@ -151,19 +161,29 @@ namespace Concentus.Silk
             int order               /* I    Prediction order                                            */
         )
         {
-            int k;
-            int[][] Atmp_QA = Arrays.InitTwoDimensionalArray<int>(2, SilkConstants.SILK_MAX_ORDER_LPC);
-            int[] Anew_QA;
+            // CursedForge fork: the stabilisation loops call this a number of times that changes per frame, so its scratch goes back to the arena on return.
+            int scratchMark = ScratchArena.Mark();
 
-            Anew_QA = Atmp_QA[order & 1];
-
-            /* Increase Q domain of the AR coefficients */
-            for (k = 0; k < order; k++)
+            try
             {
-                Anew_QA[k] = Inlines.silk_RSHIFT32(A_Q24[k], 24 - QA);
-            }
+                int k;
+                int[][] Atmp_QA = ScratchArena.Rent2D<int>(2, SilkConstants.SILK_MAX_ORDER_LPC);
+                int[] Anew_QA;
 
-            return LPC_inverse_pred_gain_QA(Atmp_QA, order);
+                Anew_QA = Atmp_QA[order & 1];
+
+                /* Increase Q domain of the AR coefficients */
+                for (k = 0; k < order; k++)
+                {
+                    Anew_QA[k] = Inlines.silk_RSHIFT32(A_Q24[k], 24 - QA);
+                }
+
+                return LPC_inverse_pred_gain_QA(Atmp_QA, order);
+            }
+            finally
+            {
+                ScratchArena.Release(scratchMark);
+            }
         }
     }
 }

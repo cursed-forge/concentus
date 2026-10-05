@@ -51,15 +51,15 @@ namespace Concentus.Silk
         )
         {
             int i;
-            int[] invGains_Q16 = new int[SilkConstants.MAX_NB_SUBFR];
-            int[] local_gains = new int[SilkConstants.MAX_NB_SUBFR];
-            int[] Wght_Q15 = new int[SilkConstants.MAX_NB_SUBFR];
-            short[] NLSF_Q15 = new short[SilkConstants.MAX_LPC_ORDER];
+            int[] invGains_Q16 = ScratchArena.Rent<int>(SilkConstants.MAX_NB_SUBFR);
+            int[] local_gains = ScratchArena.Rent<int>(SilkConstants.MAX_NB_SUBFR);
+            int[] Wght_Q15 = ScratchArena.Rent<int>(SilkConstants.MAX_NB_SUBFR);
+            short[] NLSF_Q15 = ScratchArena.Rent<short>(SilkConstants.MAX_LPC_ORDER);
             int x_ptr2;
             int x_pre_ptr;
             short[] LPC_in_pre;
             int tmp, min_gain_Q16, minInvGain_Q30;
-            int[] LTP_corrs_rshift = new int[SilkConstants.MAX_NB_SUBFR];
+            int[] LTP_corrs_rshift = ScratchArena.Rent<int>(SilkConstants.MAX_NB_SUBFR);
             
             /* weighting for weighted least squares */
             min_gain_Q16 = int.MaxValue >> 6;
@@ -86,7 +86,7 @@ namespace Concentus.Silk
                 local_gains[i] = Inlines.silk_DIV32(((int)1 << 16), invGains_Q16[i]);
             }
 
-            LPC_in_pre = new short[psEnc.nb_subfr * psEnc.predictLPCOrder + psEnc.frame_length];
+            LPC_in_pre = ScratchArena.Rent<short>(psEnc.nb_subfr * psEnc.predictLPCOrder + psEnc.frame_length);
             if (psEnc.indices.signalType == SilkConstants.TYPE_VOICED)
             {
                 int[] WLTP;
@@ -96,18 +96,18 @@ namespace Concentus.Silk
                 /**********/
                 Inlines.OpusAssert(psEnc.ltp_mem_length - psEnc.predictLPCOrder >= psEncCtrl.pitchL[0] + SilkConstants.LTP_ORDER / 2);
 
-                WLTP = new int[psEnc.nb_subfr * SilkConstants.LTP_ORDER * SilkConstants.LTP_ORDER];
+                WLTP = ScratchArena.Rent<int>(psEnc.nb_subfr * SilkConstants.LTP_ORDER * SilkConstants.LTP_ORDER);
 
                 /* LTP analysis */
-                BoxedValueInt boxed_codgain = new BoxedValueInt(psEncCtrl.LTPredCodGain_Q7);
+                BoxedValueInt boxed_codgain = ScratchArena.BoxInt(psEncCtrl.LTPredCodGain_Q7);
                 FindLTP.silk_find_LTP(psEncCtrl.LTPCoef_Q14, WLTP, boxed_codgain,
                     res_pitch, psEncCtrl.pitchL, Wght_Q15, psEnc.subfr_length,
                     psEnc.nb_subfr, psEnc.ltp_mem_length, LTP_corrs_rshift);
                 psEncCtrl.LTPredCodGain_Q7 = boxed_codgain.Val;
 
                 /* Quantize LTP gain parameters */
-                BoxedValueSbyte boxed_periodicity = new BoxedValueSbyte(psEnc.indices.PERIndex);
-                BoxedValueInt boxed_gain = new BoxedValueInt(psEnc.sum_log_gain_Q7);
+                BoxedValueSbyte boxed_periodicity = ScratchArena.BoxSbyte(psEnc.indices.PERIndex);
+                BoxedValueInt boxed_gain = ScratchArena.BoxInt(psEnc.sum_log_gain_Q7);
                 QuantizeLTPGains.silk_quant_LTP_gains(psEncCtrl.LTPCoef_Q14, psEnc.indices.LTPIndex, boxed_periodicity,
                     boxed_gain, WLTP, psEnc.mu_LTP_Q9, psEnc.LTPQuantLowComplexity, psEnc.nb_subfr
                     );

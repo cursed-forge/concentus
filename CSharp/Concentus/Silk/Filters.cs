@@ -112,8 +112,8 @@ namespace Concentus.Silk
             px = x_ptr;
             pxw_Q3 = 0;
             lag = P.lagPrev;
-            x_filt_Q12 = new int[psEnc.subfr_length];
-            st_res_Q2 = new int[psEnc.subfr_length];
+            x_filt_Q12 = ScratchArena.Rent<int>(psEnc.subfr_length);
+            st_res_Q2 = ScratchArena.Rent<int>(psEnc.subfr_length);
             for (k = 0; k < psEnc.nb_subfr; k++)
             {
                 /* Update Variables that change per sub frame */
@@ -597,29 +597,39 @@ namespace Concentus.Silk
         /// <returns>inverse prediction gain in energy domain, Q30</returns>
         internal static int silk_LPC_inverse_pred_gain(short[] A_Q12, int order)
         {
-            int k;
-            int[][] Atmp_QA = new int[2][];
-            Atmp_QA[0] = new int[order];
-            Atmp_QA[1] = new int[order];
-            int[] Anew_QA;
-            int DC_resp = 0;
+            // CursedForge fork: the stabilisation loops call this a number of times that changes per frame, so its scratch goes back to the arena on return.
+            int scratchMark = ScratchArena.Mark();
 
-            Anew_QA = Atmp_QA[order & 1];
-
-            /* Increase Q domain of the AR coefficients */
-            for (k = 0; k < order; k++)
+            try
             {
-                DC_resp += (int)A_Q12[k];
-                Anew_QA[k] = Inlines.silk_LSHIFT32((int)A_Q12[k], QA - 12);
-            }
+                int k;
+                int[][] Atmp_QA = ScratchArena.Rent<int[]>(2);
+                Atmp_QA[0] = ScratchArena.Rent<int>(order);
+                Atmp_QA[1] = ScratchArena.Rent<int>(order);
+                int[] Anew_QA;
+                int DC_resp = 0;
 
-            /* If the DC is unstable, we don't even need to do the full calculations */
-            if (DC_resp >= 4096)
+                Anew_QA = Atmp_QA[order & 1];
+
+                /* Increase Q domain of the AR coefficients */
+                for (k = 0; k < order; k++)
+                {
+                    DC_resp += (int)A_Q12[k];
+                    Anew_QA[k] = Inlines.silk_LSHIFT32((int)A_Q12[k], QA - 12);
+                }
+
+                /* If the DC is unstable, we don't even need to do the full calculations */
+                if (DC_resp >= 4096)
+                {
+                    return 0;
+                }
+
+                return LPC_inverse_pred_gain_QA(Atmp_QA, order);
+            }
+            finally
             {
-                return 0;
+                ScratchArena.Release(scratchMark);
             }
-
-            return LPC_inverse_pred_gain_QA(Atmp_QA, order);
         }
     }
 }

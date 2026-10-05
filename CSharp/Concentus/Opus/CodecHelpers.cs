@@ -84,8 +84,8 @@ namespace Concentus
 
         internal static void hp_cutoff(ReadOnlySpan<short> input, int input_ptr, int cutoff_Hz, Span<short> output, int output_ptr, int[] hp_mem, int len, int channels, int Fs)
         {
-            int[] B_Q28 = new int[3];
-            int[] A_Q28 = new int[2];
+            int[] B_Q28 = ScratchArena.Rent<int>(3);
+            int[] A_Q28 = ScratchArena.Rent<int>(2);
             int Fc_Q19, r_Q28, r_Q22;
 
             Inlines.OpusAssert(cutoff_Hz <= int.MaxValue / ((int)((1.5f * 3.14159f / 1000) * ((long)1 << (19)) + 0.5))/*Inlines.SILK_CONST(1.5f * 3.14159f / 1000, 19)*/);
@@ -264,8 +264,8 @@ namespace Concentus
         internal static int transient_viterbi(float[] E, float[] E_1, int N, int frame_cost, int rate)
         {
             int i;
-            float[][] cost = Arrays.InitTwoDimensionalArray<float>(MAX_DYNAMIC_FRAMESIZE, 16);
-            int[][] states = Arrays.InitTwoDimensionalArray<int>(MAX_DYNAMIC_FRAMESIZE, 16);
+            float[][] cost = ScratchArena.Rent2D<float>(MAX_DYNAMIC_FRAMESIZE, 16);
+            int[][] states = ScratchArena.Rent2D<int>(MAX_DYNAMIC_FRAMESIZE, 16);
             float best_cost;
             int best_state;
             float factor;
@@ -356,8 +356,8 @@ namespace Concentus
         {
             int N;
             int i;
-            float[] e = new float[MAX_DYNAMIC_FRAMESIZE + 4];
-            float[] e_1 = new float[MAX_DYNAMIC_FRAMESIZE + 3];
+            float[] e = ScratchArena.Rent<float>(MAX_DYNAMIC_FRAMESIZE + 4);
+            float[] e_1 = ScratchArena.Rent<float>(MAX_DYNAMIC_FRAMESIZE + 3);
             int memx;
             int bestLM = 0;
             int subframe;
@@ -366,7 +366,7 @@ namespace Concentus
             int[] sub;
 
             subframe = Fs / 400;
-            sub = new int[subframe];
+            sub = ScratchArena.Rent<int>(subframe);
             e[0] = mem[0];
             e_1[0] = 1.0f / (CeltConstants.EPSILON + mem[0]);
             if (buffering != 0)

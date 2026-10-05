@@ -71,8 +71,8 @@ namespace Concentus.Celt
             N2 = N >> 1;
             N4 = N >> 2;
 
-            f = new int[N2];
-            f2 = new int[N4 * 2];
+            f = ScratchArena.Rent<int>(N2);
+            f2 = ScratchArena.Rent<int>(N4 * 2);
 
             /* Consider the input to be composed of four blocks: [a, b, c, d] */
             /* Window, shuffle, fold */

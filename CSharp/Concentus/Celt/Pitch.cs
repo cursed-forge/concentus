@@ -143,11 +143,11 @@ namespace Concentus.Celt
         internal static void pitch_downsample(int[][] x, int[] x_lp, int len, int C)
         {
             int i;
-            int[] ac = new int[5];
+            int[] ac = ScratchArena.Rent<int>(5);
             int tmp = CeltConstants.Q15ONE;
-            int[] lpc = new int[4];
-            int[] mem = new int[] { 0, 0, 0, 0, 0 };
-            int[] lpc2 = new int[5];
+            int[] lpc = ScratchArena.Rent<int>(4);
+            int[] mem = ScratchArena.Rent<int>(5);
+            int[] lpc2 = ScratchArena.Rent<int>(5);
             int c1 = ((short)(0.5 + (0.8f) * (((int)1) << (15))))/*Inlines.QCONST16(0.8f, 15)*/;
 
             int shift;
@@ -213,7 +213,7 @@ namespace Concentus.Celt
         {
             int i, j;
             int lag;
-            int[] best_pitch = new int[] { 0, 0 };
+            int[] best_pitch = ScratchArena.Rent<int>(2);
             int maxcorr;
             int xmax, ymax;
             int shift = 0;
@@ -223,9 +223,9 @@ namespace Concentus.Celt
             Inlines.OpusAssert(max_pitch > 0);
             lag = len + max_pitch;
 
-            int[] x_lp4 = new int[len >> 2];
-            int[] y_lp4 = new int[lag >> 2];
-            int[] xcorr = new int[max_pitch >> 1];
+            int[] x_lp4 = ScratchArena.Rent<int>(len >> 2);
+            int[] y_lp4 = ScratchArena.Rent<int>(lag >> 2);
+            int[] xcorr = ScratchArena.Rent<int>(max_pitch >> 1);
 
             /* Downsample by 2 again */
             for (j = 0; j < len >> 2; j++)
@@ -310,7 +310,7 @@ namespace Concentus.Celt
             int g, g0;
             int pg;
             int yy, xx, xy, xy2;
-            Span<int> xcorr = new int[3];
+            Span<int> xcorr = ScratchArena.Rent<int>(3);
             int best_xy, best_yy;
             int offset;
             int minperiod0 = minperiod;
@@ -324,7 +324,7 @@ namespace Concentus.Celt
                 T0_ = maxperiod - 1;
 
             T = T0 = T0_;
-            Span<int> yy_lookup = new int[maxperiod + 1];
+            Span<int> yy_lookup = ScratchArena.Rent<int>(maxperiod + 1);
             Kernels.dual_inner_prod(x.AsSpan().Slice(x_ptr), x.AsSpan().Slice(x_ptr), x.AsSpan().Slice(x_ptr - T0), N, out xx, out xy);
 
             yy_lookup[0] = xx;

@@ -106,10 +106,10 @@ namespace Concentus.Silk
             int sumSquared = 0, smooth_coef_Q16;
             short HPstateTmp;
             short[] X;
-            int[] Xnrg = new int[SilkConstants.VAD_N_BANDS];
-            int[] NrgToNoiseRatio_Q8 = new int[SilkConstants.VAD_N_BANDS];
+            int[] Xnrg = ScratchArena.Rent<int>(SilkConstants.VAD_N_BANDS);
+            int[] NrgToNoiseRatio_Q8 = ScratchArena.Rent<int>(SilkConstants.VAD_N_BANDS);
             int speech_nrg, x_tmp;
-            int[] X_offset = new int[SilkConstants.VAD_N_BANDS];
+            int[] X_offset = ScratchArena.Rent<int>(SilkConstants.VAD_N_BANDS);
             int ret = 0;
             SilkVADState psSilk_VAD = psEncC.sVAD;
 
@@ -139,7 +139,7 @@ namespace Concentus.Silk
             X_offset[1] = decimated_framelength + decimated_framelength2;
             X_offset[2] = X_offset[1] + decimated_framelength;
             X_offset[3] = X_offset[2] + decimated_framelength2;
-            X = new short[X_offset[3] + decimated_framelength1];
+            X = ScratchArena.Rent<short>(X_offset[3] + decimated_framelength1);
 
             /* 0-8 kHz to 0-4 kHz and 4-8 kHz */
             Filters.silk_ana_filt_bank_1(pIn, pIn_ptr, psSilk_VAD.AnaState,

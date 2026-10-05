@@ -60,7 +60,7 @@ namespace Concentus.Silk
             int k, gain_tmp_Q7;
             sbyte[] cb_row_Q7;
             int cb_row_Q7_ptr = 0;
-            short[] diff_Q14 = new short[5];
+            short[] diff_Q14 = ScratchArena.Rent<short>(5);
             int sum1_Q14, sum2_Q16;
 
             /* Loop over codebook */

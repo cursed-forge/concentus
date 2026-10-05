@@ -74,8 +74,8 @@ namespace Concentus.Silk.Structs
             int frame_length                    /* I    Frame length                                */
             )
         {
-            int[] B_Q28 = new int[SilkConstants.TRANSITION_NB];
-            int[] A_Q28 = new int[SilkConstants.TRANSITION_NA];
+            int[] B_Q28 = ScratchArena.Rent<int>(SilkConstants.TRANSITION_NB);
+            int[] A_Q28 = ScratchArena.Rent<int>(SilkConstants.TRANSITION_NA);
             int fac_Q16 = 0;
             int ind = 0;
 

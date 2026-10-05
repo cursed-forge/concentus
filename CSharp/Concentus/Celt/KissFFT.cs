@@ -366,7 +366,7 @@ namespace Concentus.Celt
             int m2, m;
             int p;
             int L;
-            int[] fstride = new int[MAXFACTORS];
+            int[] fstride = ScratchArena.Rent<int>(MAXFACTORS);
             int i;
             int shift;
 

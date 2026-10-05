@@ -76,7 +76,7 @@ namespace Concentus.Celt
         {
             int i, c;
             int badness = 0;
-            int[] prev = { 0, 0 };
+            int[] prev = ScratchArena.Rent<int>(2);
             int coef;
             int beta;
 
@@ -177,7 +177,7 @@ namespace Concentus.Celt
             int max_decay;
             int[][] oldEBands_intra;
             int[][] error_intra;
-            EntropyCoder enc_start_state = new EntropyCoder(); // [porting note] stack variable
+            EntropyCoder enc_start_state = ScratchArena.RentObject<EntropyCoder>().ScratchReset(); // [porting note] stack variable
             uint tell;
             int badness1 = 0;
             int intra_bias;
@@ -203,8 +203,8 @@ namespace Concentus.Celt
             }
             enc_start_state.Assign(enc);
 
-            oldEBands_intra = Arrays.InitTwoDimensionalArray<int>(C, m.nbEBands);
-            error_intra = Arrays.InitTwoDimensionalArray<int>(C, m.nbEBands);
+            oldEBands_intra = ScratchArena.Rent2D<int>(C, m.nbEBands);
+            error_intra = ScratchArena.Rent2D<int>(C, m.nbEBands);
             Arrays.MemCopy(oldEBands[0], 0, oldEBands_intra[0], 0, m.nbEBands);
             if (C == 2)
                 Arrays.MemCopy(oldEBands[1], 0, oldEBands_intra[1], 0, m.nbEBands);
@@ -218,7 +218,7 @@ namespace Concentus.Celt
             if (intra == 0)
             {
                 int intra_buf;
-                EntropyCoder enc_intra_state = new EntropyCoder(); // [porting note] stack variable
+                EntropyCoder enc_intra_state = ScratchArena.RentObject<EntropyCoder>().ScratchReset(); // [porting note] stack variable
                 int tell_intra;
                 uint nstart_bytes;
                 uint nintra_bytes;
@@ -237,7 +237,7 @@ namespace Concentus.Celt
 
                 if (save_bytes != 0)
                 {
-                    intra_bits = new byte[(int)save_bytes];
+                    intra_bits = ScratchArena.Rent<byte>((int)save_bytes);
                     /* Copy bits from intra bit-stream */
                     encodedData.Slice(intra_buf, (int)save_bytes).CopyTo(intra_bits);
                 }
@@ -364,7 +364,7 @@ namespace Concentus.Celt
         {
             byte[] prob_model = Tables.e_prob_model[LM][intra];
             int i, c;
-            int[] prev = { 0, 0 };
+            int[] prev = ScratchArena.Rent<int>(2);
             int coef;
             int beta;
             int budget;

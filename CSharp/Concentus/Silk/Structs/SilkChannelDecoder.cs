@@ -278,7 +278,7 @@ namespace Concentus.Silk.Structs
             int condCoding                     /* I    The type of conditional coding to use       */
         )
         {
-            SilkDecoderControl thisCtrl = new SilkDecoderControl();
+            SilkDecoderControl thisCtrl = ScratchArena.RentObject<SilkDecoderControl>().ScratchReset();
             int L, mv_len, ret = 0;
 
             L = this.frame_length;
@@ -290,7 +290,7 @@ namespace Concentus.Silk.Structs
             if (lostFlag == DecoderAPIFlag.FLAG_DECODE_NORMAL ||
                 (lostFlag == DecoderAPIFlag.FLAG_DECODE_LBRR && this.LBRR_flags[this.nFramesDecoded] == 1))
             {
-                short[] pulses = new short[(L + SilkConstants.SHELL_CODEC_FRAME_LENGTH - 1) & ~(SilkConstants.SHELL_CODEC_FRAME_LENGTH - 1)];
+                short[] pulses = ScratchArena.Rent<short>((L + SilkConstants.SHELL_CODEC_FRAME_LENGTH - 1) & ~(SilkConstants.SHELL_CODEC_FRAME_LENGTH - 1));
                 /*********************************************/
                 /* Decode quantization indices of side info  */
                 /*********************************************/

@@ -82,13 +82,13 @@ namespace Concentus.Silk
         {
             int i, n, decode_only_middle = 0, ret = SilkError.SILK_NO_ERROR;
             int LBRR_symbol;
-            BoxedValueInt nSamplesOutDec = new BoxedValueInt();
+            BoxedValueInt nSamplesOutDec = ScratchArena.BoxInt(0);
             Span<short> samplesOut_tmp;
-            int[] samplesOut_tmp_ptrs = new int[2];
+            int[] samplesOut_tmp_ptrs = ScratchArena.Rent<int>(2);
             short[] samplesOut1_tmp_storage1;
             short[] samplesOut1_tmp_storage2;
             short[] samplesOut2_tmp;
-            int[] MS_pred_Q13 = new int[] { 0, 0 };
+            int[] MS_pred_Q13 = ScratchArena.Rent<int>(2);
             Span<short> resample_out;
             int resample_out_ptr;
             SilkChannelDecoder[] channel_state = psDec.channel_state;
@@ -220,7 +220,7 @@ namespace Concentus.Silk
                         {
                             if (channel_state[n].LBRR_flags[i] != 0)
                             {
-                                short[] pulses = new short[SilkConstants.MAX_FRAME_LENGTH];
+                                short[] pulses = ScratchArena.Rent<short>(SilkConstants.MAX_FRAME_LENGTH);
                                 int condCoding;
 
                                 if (decControl.nChannelsInternal == 2 && n == 0)
@@ -228,7 +228,7 @@ namespace Concentus.Silk
                                     Stereo.silk_stereo_decode_pred(psRangeDec, frameData, MS_pred_Q13);
                                     if (channel_state[1].LBRR_flags[i] == 0)
                                     {
-                                        BoxedValueInt decodeOnlyMiddleBoxed = new BoxedValueInt(decode_only_middle);
+                                        BoxedValueInt decodeOnlyMiddleBoxed = ScratchArena.BoxInt(decode_only_middle);
                                         Stereo.silk_stereo_decode_mid_only(psRangeDec, frameData, decodeOnlyMiddleBoxed);
                                         decode_only_middle = decodeOnlyMiddleBoxed.Val;
                                     }
@@ -262,7 +262,7 @@ namespace Concentus.Silk
                     if ((lostFlag == DecoderAPIFlag.FLAG_DECODE_NORMAL && channel_state[1].VAD_flags[channel_state[0].nFramesDecoded] == 0) ||
                         (lostFlag == DecoderAPIFlag.FLAG_DECODE_LBRR && channel_state[1].LBRR_flags[channel_state[0].nFramesDecoded] == 0))
                     {
-                        BoxedValueInt decodeOnlyMiddleBoxed = new BoxedValueInt(decode_only_middle);
+                        BoxedValueInt decodeOnlyMiddleBoxed = ScratchArena.BoxInt(decode_only_middle);
                         Stereo.silk_stereo_decode_mid_only(psRangeDec, frameData, decodeOnlyMiddleBoxed);
                         decode_only_middle = decodeOnlyMiddleBoxed.Val;
                     }
@@ -305,7 +305,7 @@ namespace Concentus.Silk
             }
             else
             {
-                samplesOut1_tmp_storage1 = new short[decControl.nChannelsInternal * (channel_state[0].frame_length + 2)];
+                samplesOut1_tmp_storage1 = ScratchArena.Rent<short>(decControl.nChannelsInternal * (channel_state[0].frame_length + 2));
                 samplesOut_tmp = samplesOut1_tmp_storage1;
                 samplesOut_tmp_ptrs[0] = 0;
                 samplesOut_tmp_ptrs[1] = channel_state[0].frame_length + 2;
@@ -378,7 +378,7 @@ namespace Concentus.Silk
             /* Set up pointers to temp buffers */
             if (decControl.nChannelsAPI == 2)
             {
-                samplesOut2_tmp = new short[nSamplesOut];
+                samplesOut2_tmp = ScratchArena.Rent<short>(nSamplesOut);
                 resample_out = samplesOut2_tmp;
                 resample_out_ptr = 0;
             }
@@ -389,7 +389,7 @@ namespace Concentus.Silk
             
             if (delay_stack_alloc != 0)
             {
-                samplesOut1_tmp_storage2 = new short[decControl.nChannelsInternal * (channel_state[0].frame_length + 2)];
+                samplesOut1_tmp_storage2 = ScratchArena.Rent<short>(decControl.nChannelsInternal * (channel_state[0].frame_length + 2));
                 samplesOut.Slice(samplesOut_ptr, decControl.nChannelsInternal * (channel_state[0].frame_length + 2)).CopyTo(samplesOut1_tmp_storage2);
                 samplesOut_tmp = samplesOut1_tmp_storage2;
                 samplesOut_tmp_ptrs[0] = 0;
@@ -437,8 +437,7 @@ namespace Concentus.Silk
             /* Export pitch lag, measured at 48 kHz sampling rate */
             if (channel_state[0].prevSignalType == SilkConstants.TYPE_VOICED)
             {
-                int[] mult_tab = { 6, 4, 3 };
-                decControl.prevPitchLag = channel_state[0].lagPrev * mult_tab[(channel_state[0].fs_kHz - 8) >> 2];
+                decControl.prevPitchLag = channel_state[0].lagPrev * PitchLagMultTab[(channel_state[0].fs_kHz - 8) >> 2];
             }
             else
             {
@@ -459,5 +458,8 @@ namespace Concentus.Silk
 
             return ret;
         }
+
+        // CursedForge fork: was a local array initialiser, one new array per decode.
+        private static readonly int[] PitchLagMultTab = { 6, 4, 3 };
     }
 }

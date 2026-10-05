@@ -64,7 +64,7 @@ namespace Concentus.Silk
             offset = LPC_order + subfr_length;
 
             /* Filter input to create the LPC residual for each frame half, and measure subframe energies */
-            LPC_res = new short[(SilkConstants.MAX_NB_SUBFR >> 1) * offset];
+            LPC_res = ScratchArena.Rent<short>((SilkConstants.MAX_NB_SUBFR >> 1) * offset);
             Inlines.OpusAssert((nb_subfr >> 1) * (SilkConstants.MAX_NB_SUBFR >> 1) == nb_subfr);
             for (i = 0; i < nb_subfr >> 1; i++)
             {
@@ -122,7 +122,7 @@ namespace Concentus.Silk
         {
             int i, j, lshifts, Qxtra;
             int c_max, w_max, tmp, tmp2, nrg;
-            int[] cn = new int[D]; //SilkConstants.MAX_MATRIX_SIZE
+            int[] cn = ScratchArena.Rent<int>(D); //SilkConstants.MAX_MATRIX_SIZE
             int pRow;
 
             /* Safety checks */

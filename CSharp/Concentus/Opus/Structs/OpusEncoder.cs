@@ -108,6 +108,15 @@ namespace Concentus.Structs
         // Here they are just included as an intrinsic variable.
         internal readonly SilkEncoder SilkEncoder = new SilkEncoder();
         internal readonly CeltEncoder Celt_Encoder = new CeltEncoder();
+
+        // CursedForge fork: the per-call scratch memory of this encoder (ScratchArena).
+        private readonly ScratchArena _scratch = new ScratchArena();
+
+        // CursedForge fork: cached delegates. A method group passed as a delegate
+        // makes a new delegate on each call when the compiler is older than C# 11
+        // (the netstandard2.0 build), which was 128 bytes per encode.
+        private static readonly Downmix.downmix_func<short> DownmixInt = Downmix.downmix_int;
+        private static readonly Downmix.downmix_func<float> DownmixFloat = Downmix.downmix_float;
         
         // used by multichannel structs
         internal OpusEncoder() { }
@@ -360,7 +369,7 @@ namespace Concentus.Structs
             int i;
             int ret = 0;
             int nBytes;
-            EntropyCoder enc = new EntropyCoder(); // porting note: stack var
+            EntropyCoder enc = ScratchArena.RentObject<EntropyCoder>().ScratchReset(); // porting note: stack var
             int bytes_target;
             int prefill = 0;
             int start_band = 0;
@@ -383,7 +392,7 @@ namespace Concentus.Structs
             int total_buffer;
             int stereo_width;
             CeltMode celt_mode;
-            AnalysisInfo analysis_info = new AnalysisInfo(); // porting note: stack var
+            AnalysisInfo analysis_info = ScratchArena.RentObject<AnalysisInfo>().ScratchReset(); // porting note: stack var
             int analysis_read_pos_bak = -1;
             int analysis_read_subframe_bak = -1;
             short[] tmp_prefill;
@@ -681,7 +690,7 @@ namespace Concentus.Structs
             {
                 int[] voice_bandwidth_thresholds;
                 int[] music_bandwidth_thresholds;
-                int[] bandwidth_thresholds = new int[8];
+                int[] bandwidth_thresholds = ScratchArena.Rent<int>(8);
                 OpusBandwidth bandwidth = OpusBandwidth.OPUS_BANDWIDTH_FULLBAND;
                 int equiv_rate2;
 
@@ -804,7 +813,7 @@ namespace Concentus.Structs
                 nb_frames = frame_size > this.Fs / 25 ? 3 : 2;
                 bytes_per_frame = Inlines.IMIN(1276, (out_data_bytes - 3) / nb_frames);
 
-                tmp_data = new byte[nb_frames * bytes_per_frame];
+                tmp_data = ScratchArena.Rent<byte>(nb_frames * bytes_per_frame);
 
                 rp = new OpusRepacketizer();
 
@@ -875,7 +884,7 @@ namespace Concentus.Structs
 
             enc.enc_init((uint)(max_data_bytes - 1));
 
-            pcm_buf = new short[(total_buffer + frame_size) * this.channels];
+            pcm_buf = ScratchArena.Rent<short>((total_buffer + frame_size) * this.channels);
             Arrays.MemCopy(this.delay_buffer, ((this.encoder_buffer - total_buffer) * this.channels), pcm_buf, 0, total_buffer * this.channels);
 
             if (this.mode == OpusMode.MODE_CELT_ONLY)
@@ -902,7 +911,7 @@ namespace Concentus.Structs
             if (this.mode != OpusMode.MODE_CELT_ONLY)
             {
                 int total_bitRate, celt_rate;
-                short[] pcm_silk = new short[this.channels * frame_size];
+                short[] pcm_silk = ScratchArena.Rent<short>(this.channels * frame_size);
 
                 /* Distribute bits between SILK and CELT */
                 total_bitRate = 8 * bytes_target * frame_rate;
@@ -1046,7 +1055,7 @@ namespace Concentus.Structs
 
                 if (prefill != 0)
                 {
-                    BoxedValueInt zero = new BoxedValueInt(0);
+                    BoxedValueInt zero = ScratchArena.BoxInt(0);
                     int prefill_offset;
 
                     /* Use a smooth onset for the SILK prefill to avoid the encoder trying to encode
@@ -1066,7 +1075,7 @@ namespace Concentus.Structs
 
                 Arrays.MemCopy(pcm_buf, total_buffer * this.channels, pcm_silk, 0, frame_size * this.channels);
 
-                BoxedValueInt boxed_silkBytes = new BoxedValueInt(nBytes);
+                BoxedValueInt boxed_silkBytes = ScratchArena.BoxInt(nBytes);
                 ret = EncodeAPI.silk_Encode(silk_enc, this.silk_mode, pcm_silk, frame_size, enc, data.Slice(data_ptr), boxed_silkBytes, 0);
                 nBytes = boxed_silkBytes.Val;
 
@@ -1189,7 +1198,7 @@ namespace Concentus.Structs
             }
 
 
-            tmp_prefill = new short[this.channels * this.Fs / 400];
+            tmp_prefill = ScratchArena.Rent<short>(this.channels * this.Fs / 400);
             if (this.mode != OpusMode.MODE_SILK_ONLY && this.mode != this.prev_mode && this.prev_mode > 0)
             {
                 Arrays.MemCopy(this.delay_buffer, ((this.encoder_buffer - total_buffer - this.Fs / 400) * this.channels), tmp_prefill, 0, this.channels * this.Fs / 400);
@@ -1454,6 +1463,22 @@ namespace Concentus.Structs
         /// <returns>The length of the encoded packet, in bytes. This value will always be less than or equal to 1275, the maximum Opus packet size.</returns>
         public int Encode(ReadOnlySpan<short> in_pcm, int frame_size, Span<byte> out_data, int max_data_bytes)
         {
+            // CursedForge fork: every scratch array of this call comes from this
+            // instance's arena, so a warm codec allocates nothing (ScratchArena).
+            ScratchArena previous = ScratchArena.Enter(_scratch);
+
+            try
+            {
+                return EncodeShort(in_pcm, frame_size, out_data, max_data_bytes);
+            }
+            finally
+            {
+                ScratchArena.Exit(previous);
+            }
+        }
+
+        private int EncodeShort(ReadOnlySpan<short> in_pcm, int frame_size, Span<byte> out_data, int max_data_bytes)
+        {
             // Check that the caller is telling the truth about its input buffers
             if (max_data_bytes > out_data.Length)
             {
@@ -1470,7 +1495,7 @@ namespace Concentus.Structs
 
             int internal_frame_size = CodecHelpers.compute_frame_size(in_pcm, frame_size,
                   this.variable_duration, this.channels, this.Fs, this.bitrate_bps,
-                  delay_compensation, Downmix.downmix_int, this.analysis.subframe_mem, this.analysis.enabled);
+                  delay_compensation, DownmixInt, this.analysis.subframe_mem, this.analysis.enabled);
 
             // Check that input pcm length is >= frame_size
             if (internal_frame_size > in_pcm.Length)
@@ -1483,7 +1508,7 @@ namespace Concentus.Structs
             try
             {
                 int ret = opus_encode_native<short>(in_pcm, 0, internal_frame_size, out_data, 0, max_data_bytes, 16,
-                                         in_pcm, frame_size, 0, -2, this.channels, Downmix.downmix_int, 0);
+                                         in_pcm, frame_size, 0, -2, this.channels, DownmixInt, 0);
 
                 if (ret < 0)
                 {
@@ -1537,6 +1562,22 @@ namespace Concentus.Structs
         /// <returns>The length of the encoded packet, in bytes. This value will always be less than or equal to 1275, the maximum Opus packet size.</returns>
         public int Encode(ReadOnlySpan<float> in_pcm, int frame_size, Span<byte> out_data, int max_data_bytes)
         {
+            // CursedForge fork: every scratch array of this call comes from this
+            // instance's arena, so a warm codec allocates nothing (ScratchArena).
+            ScratchArena previous = ScratchArena.Enter(_scratch);
+
+            try
+            {
+                return EncodeFloat(in_pcm, frame_size, out_data, max_data_bytes);
+            }
+            finally
+            {
+                ScratchArena.Exit(previous);
+            }
+        }
+
+        private int EncodeFloat(ReadOnlySpan<float> in_pcm, int frame_size, Span<byte> out_data, int max_data_bytes)
+        {
             // Check that the caller is telling the truth about its input buffers
             if (max_data_bytes > out_data.Length)
             {
@@ -1557,7 +1598,7 @@ namespace Concentus.Structs
 
             internal_frame_size = CodecHelpers.compute_frame_size(in_pcm, frame_size,
                   this.variable_duration, this.channels, this.Fs, this.bitrate_bps,
-                  delay_compensation, Downmix.downmix_float, this.analysis.subframe_mem, this.analysis.enabled);
+                  delay_compensation, DownmixFloat, this.analysis.subframe_mem, this.analysis.enabled);
                   
             // Check that input pcm length is >= frame_size
             if (internal_frame_size > in_pcm.Length)
@@ -1567,7 +1608,7 @@ namespace Concentus.Structs
                     internal_frame_size, in_pcm.Length));
             }
 
-            input = new short[internal_frame_size * this.channels];
+            input = ScratchArena.Rent<short>(internal_frame_size * this.channels);
 
             for (i = 0; i < internal_frame_size * this.channels; i++)
                 input[i] = Inlines.FLOAT2INT16(in_pcm[i]);
@@ -1575,7 +1616,7 @@ namespace Concentus.Structs
             try
             {
                 ret = opus_encode_native(input, 0, internal_frame_size, out_data, 0, max_data_bytes, 16,
-                                     in_pcm, frame_size, 0, -2, this.channels, Downmix.downmix_float, 1);
+                                     in_pcm, frame_size, 0, -2, this.channels, DownmixFloat, 1);
 
                 if (ret < 0)
                 {

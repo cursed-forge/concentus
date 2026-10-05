@@ -130,10 +130,10 @@ namespace Concentus.Silk
         /// <param name="pulses0">I    data: nonnegative pulse amplitudes</param>
         internal static void silk_shell_encoder(EntropyCoder psRangeEnc, Span<byte> encodedData, Span<int> pulses0, int pulses0_ptr)
         {
-            int[] pulses1 = new int[8];
-            int[] pulses2 = new int[4];
-            int[] pulses3 = new int[2];
-            int[] pulses4 = new int[1];
+            int[] pulses1 = ScratchArena.Rent<int>(8);
+            int[] pulses2 = ScratchArena.Rent<int>(4);
+            int[] pulses3 = ScratchArena.Rent<int>(2);
+            int[] pulses4 = ScratchArena.Rent<int>(1);
 
             /* this function operates on one shell code frame of 16 pulses */
             Inlines.OpusAssert(SilkConstants.SHELL_CODEC_FRAME_LENGTH == 16);
@@ -177,9 +177,9 @@ namespace Concentus.Silk
             int pulses4                         /* I    number of pulses per pulse-subframe         */
         )
         {
-            short[] pulses1 = new short[8];
-            short[] pulses2 = new short[4];
-            short[] pulses3 = new short[2];
+            short[] pulses1 = ScratchArena.Rent<short>(8);
+            short[] pulses2 = ScratchArena.Rent<short>(4);
+            short[] pulses3 = ScratchArena.Rent<short>(2);
 
             /* this function operates on one shell code frame of 16 pulses */
             Inlines.OpusAssert(SilkConstants.SHELL_CODEC_FRAME_LENGTH == 16);

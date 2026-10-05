@@ -199,8 +199,8 @@ namespace Concentus.Celt.Structs
             int c;
             int i;
             int C = this.channels;
-            int[][] out_syn = new int[2][];
-            int[] out_syn_ptrs = new int[2];
+            int[][] out_syn = ScratchArena.Rent<int[]>(2);
+            int[] out_syn_ptrs = ScratchArena.Rent<int>(2);
             CeltMode mode;
             int nbEBands;
             int overlap;
@@ -230,7 +230,7 @@ namespace Concentus.Celt.Structs
                 end = this.end;
                 effEnd = Inlines.IMAX(start, Inlines.IMIN(end, mode.effEBands));
 
-                X = Arrays.InitTwoDimensionalArray<int>(C, N);   /*< Interleaved normalised MDCTs */
+                X = ScratchArena.Rent2D<int>(C, N);   /*< Interleaved normalised MDCTs */
 
                 /* Energy decay */
                 decay = loss_count == 0 ? ((short)(0.5 + (1.5f) * (((int)1) << (CeltConstants.DB_SHIFT))))/*Inlines.QCONST16(1.5f, CeltConstants.DB_SHIFT)*/ : ((short)(0.5 + (0.5f) * (((int)1) << (CeltConstants.DB_SHIFT))))/*Inlines.QCONST16(0.5f, CeltConstants.DB_SHIFT)*/;
@@ -286,8 +286,8 @@ namespace Concentus.Celt.Structs
                     fade = ((short)(0.5 + (.8f) * (((int)1) << (15))))/*Inlines.QCONST16(.8f, 15)*/;
                 }
 
-                etmp = new int[overlap];
-                exc = new int[CeltConstants.MAX_PERIOD];
+                etmp = ScratchArena.Rent<int>(overlap);
+                exc = ScratchArena.Rent<int>(CeltConstants.MAX_PERIOD);
                 Span<int> lpc_mem = stackalloc int[CeltConstants.LPC_ORDER];
                 window = mode.window;
                 c = 0; do
@@ -309,7 +309,7 @@ namespace Concentus.Celt.Structs
 
                     if (loss_count == 0)
                     {
-                        int[] ac = new int[CeltConstants.LPC_ORDER + 1];
+                        int[] ac = ScratchArena.Rent<int>(CeltConstants.LPC_ORDER + 1);
                         /* Compute LPC coefficients for the last MAX_PERIOD samples before
                            the first loss so we can work in the excitation-filter domain. */
                         Autocorrelation._celt_autocorr(exc, ac, window, overlap,
@@ -481,8 +481,8 @@ namespace Concentus.Celt.Structs
             int[] fine_priority;
             int[] tf_res;
             byte[] collapse_masks;
-            int[][] out_syn = new int[2][];
-            int[] out_syn_ptrs = new int[2];
+            int[][] out_syn = ScratchArena.Rent<int[]>(2);
+            int[] out_syn_ptrs = ScratchArena.Rent<int>(2);
             int[] oldBandE, oldLogE, oldLogE2, backgroundLogE;
 
             int shortBlocks;
@@ -561,7 +561,7 @@ namespace Concentus.Celt.Structs
             {
                 // If no entropy decoder was passed into this function, we need to create
                 // a new one here for local use only. It only exists in this function scope.
-                dec = new EntropyCoder();
+                dec = ScratchArena.RentObject<EntropyCoder>().ScratchReset();
                 dec.dec_init(data.Slice(data_ptr), (uint)len);
             }
 
@@ -625,7 +625,7 @@ namespace Concentus.Celt.Structs
             QuantizeBands.unquant_coarse_energy(mode, start, end, oldBandE,
                   intra_ener, dec, data.Slice(data_ptr), C, LM);
 
-            tf_res = new int[nbEBands];
+            tf_res = ScratchArena.Rent<int>(nbEBands);
             CeltCommon.tf_decode(start, end, isTransient, tf_res, LM, dec, data.Slice(data_ptr));
 
             tell = dec.tell();
@@ -633,11 +633,11 @@ namespace Concentus.Celt.Structs
             if (tell + 4 <= total_bits)
                 spread_decision = dec.dec_icdf(data.Slice(data_ptr), Tables.spread_icdf, 5);
 
-            cap = new int[nbEBands];
+            cap = ScratchArena.Rent<int>(nbEBands);
 
             CeltCommon.init_caps(mode, cap, LM, C);
 
-            offsets = new int[nbEBands];
+            offsets = ScratchArena.Rent<int>(nbEBands);
 
             dynalloc_logp = 6;
             total_bits <<= EntropyCoder.BITRES;
@@ -670,7 +670,7 @@ namespace Concentus.Celt.Structs
                     dynalloc_logp = Inlines.IMAX(2, dynalloc_logp - 1);
             }
 
-            fine_quant = new int[nbEBands];
+            fine_quant = ScratchArena.Rent<int>(nbEBands);
             alloc_trim = tell + (6 << EntropyCoder.BITRES) <= total_bits ?
                   dec.dec_icdf(data.Slice(data_ptr), Tables.trim_icdf, 7) : 5;
 
@@ -678,8 +678,8 @@ namespace Concentus.Celt.Structs
             anti_collapse_rsv = isTransient != 0 && LM >= 2 && bits >= ((LM + 2) << EntropyCoder.BITRES) ? (1 << EntropyCoder.BITRES) : 0;
             bits -= anti_collapse_rsv;
 
-            pulses = new int[nbEBands];
-            fine_priority = new int[nbEBands];
+            pulses = ScratchArena.Rent<int>(nbEBands);
+            fine_priority = ScratchArena.Rent<int>(nbEBands);
             
             codedBands = Rate.compute_allocation_decode(mode, start, end, offsets, cap,
                   alloc_trim, ref intensity, ref dual_stereo, bits, out balance, pulses,
@@ -694,9 +694,9 @@ namespace Concentus.Celt.Structs
             } while (++c < CC);
 
             /* Decode fixed codebook */
-            collapse_masks = new byte[C * nbEBands];
+            collapse_masks = ScratchArena.Rent<byte>(C * nbEBands);
 
-            X = Arrays.InitTwoDimensionalArray<int>(C, N);   /*< Interleaved normalised MDCTs */
+            X = ScratchArena.Rent2D<int>(C, N);   /*< Interleaved normalised MDCTs */
             
             Bands.quant_all_bands_decode(0, mode, start, end, X[0], C == 2 ? X[1] : null, collapse_masks,
                   null, pulses, shortBlocks, spread_decision, dual_stereo, intensity, tf_res,

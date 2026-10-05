@@ -117,7 +117,7 @@ namespace Concentus.Silk
             int[] abs_pulses;
             int[] sum_pulses;
             int[] nRshifts;
-            int[] pulses_comb = new int[8];
+            int[] pulses_comb = ScratchArena.Rent<int>(8);
             int abs_pulses_ptr;
             int pulses_ptr;
             byte[] nBits_ptr;
@@ -138,7 +138,7 @@ namespace Concentus.Silk
             }
 
             /* Take the absolute value of the pulses */
-            abs_pulses = new int[iter * SilkConstants.SHELL_CODEC_FRAME_LENGTH];
+            abs_pulses = ScratchArena.Rent<int>(iter * SilkConstants.SHELL_CODEC_FRAME_LENGTH);
             Inlines.OpusAssert((SilkConstants.SHELL_CODEC_FRAME_LENGTH & 3) == 0);
             
             // unrolled loop
@@ -151,8 +151,8 @@ namespace Concentus.Silk
             }
 
             /* Calc sum pulses per shell code frame */
-            sum_pulses = new int[iter];
-            nRshifts = new int[iter];
+            sum_pulses = ScratchArena.Rent<int>(iter);
+            nRshifts = ScratchArena.Rent<int>(iter);
             abs_pulses_ptr = 0;
             for (i = 0; i < iter; i++)
             {

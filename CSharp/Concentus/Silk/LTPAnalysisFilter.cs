@@ -53,7 +53,7 @@ namespace Concentus.Silk
 )
         {
             int x_ptr2, x_lag_ptr;
-            short[] Btmp_Q14 = new short[SilkConstants.LTP_ORDER];
+            short[] Btmp_Q14 = ScratchArena.Rent<short>(SilkConstants.LTP_ORDER);
             int LTP_res_ptr;
             int k, i;
             int LTP_est;

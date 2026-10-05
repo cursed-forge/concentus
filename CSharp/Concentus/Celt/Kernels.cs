@@ -55,8 +55,12 @@ namespace Concentus.Celt
              )
         {
             int i, j;
-            short[] rnum = new short[ord];
-            short[] local_x = new short[N + ord];
+            // CursedForge fork: N follows the pitch lag, so local_x has a size that
+            // changes per frame. RentAtLeast keeps the pool small (the code below
+            // never reads Length), and Release gives both arrays back at the end.
+            int scratchMark = ScratchArena.Mark();
+            short[] rnum = ScratchArena.Rent<short>(ord);
+            short[] local_x = ScratchArena.RentAtLeast<short>(N + ord);
 
             for (i = 0; i < ord; i++)
             {
@@ -100,6 +104,8 @@ namespace Concentus.Celt
 
                 y[i] = Inlines.SATURATE16((Inlines.ADD32(Inlines.EXTEND32(x[i]), Inlines.PSHR32(sum, CeltConstants.SIG_SHIFT))));
             }
+
+            ScratchArena.Release(scratchMark);
         }
 
         internal static void celt_fir(
@@ -111,8 +117,12 @@ namespace Concentus.Celt
              Span<int> mem)
         {
             int i, j;
-            int[] rnum = new int[ord];
-            int[] local_x = new int[N + ord];
+            // CursedForge fork: N follows the pitch lag, so local_x has a size that
+            // changes per frame. RentAtLeast keeps the pool small (the code below
+            // never reads Length), and Release gives both arrays back at the end.
+            int scratchMark = ScratchArena.Mark();
+            int[] rnum = ScratchArena.Rent<int>(ord);
+            int[] local_x = ScratchArena.RentAtLeast<int>(N + ord);
 
             for (i = 0; i < ord; i++)
             {
@@ -155,6 +165,8 @@ namespace Concentus.Celt
 
                 y[i] = Inlines.SATURATE16((Inlines.ADD32(Inlines.EXTEND32(x[i]), Inlines.PSHR32(sum, CeltConstants.SIG_SHIFT))));
             }
+
+            ScratchArena.Release(scratchMark);
         }
 
         /// <summary>

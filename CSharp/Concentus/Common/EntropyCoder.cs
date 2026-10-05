@@ -160,9 +160,18 @@ namespace Concentus.Common
         /*Nonzero if an error occurred.*/
         internal int error;
 
-        internal EntropyCoder()
+        public EntropyCoder()
         {
             Reset();
+        }
+
+        // CursedForge fork: makes a pooled instance (ScratchArena) equal to a new
+        // one. Reset() leaves nbits_total, which a new instance has at 0.
+        internal EntropyCoder ScratchReset()
+        {
+            Reset();
+            nbits_total = 0;
+            return this;
         }
 
         internal void Reset()

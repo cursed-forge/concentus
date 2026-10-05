@@ -321,7 +321,7 @@ namespace Concentus.Silk
             int inLen)
         {
             int nSamplesIn, counter, res_Q6;
-            int[] buf = new int[SilkConstants.RESAMPLER_MAX_BATCH_SIZE_IN + ORDER_FIR];
+            int[] buf = ScratchArena.Rent<int>(SilkConstants.RESAMPLER_MAX_BATCH_SIZE_IN + ORDER_FIR);
             int buf_ptr;
             int input_ptr = 0;
             int output_ptr = 0;
@@ -544,7 +544,7 @@ namespace Concentus.Silk
         {
             int nSamplesIn;
             int max_index_Q16, index_increment_Q16;
-            int[] buf = new int[S.batchSize + S.FIR_Order];
+            int[] buf = ScratchArena.Rent<int>(S.batchSize + S.FIR_Order);
 
             /* Copy buffered samples to start of buffer */
             Arrays.MemCopy(S.sFIR_i32, 0, buf, 0, S.FIR_Order);
@@ -630,7 +630,7 @@ namespace Concentus.Silk
             int nSamplesIn;
             int max_index_Q16, index_increment_Q16;
 
-            short[] buf = new short[2 * S.batchSize + SilkConstants.RESAMPLER_ORDER_FIR_12];
+            short[] buf = ScratchArena.Rent<short>(2 * S.batchSize + SilkConstants.RESAMPLER_ORDER_FIR_12);
 
             /* Copy buffered samples to start of buffer */
             Arrays.MemCopy(S.sFIR_i16, 0, buf, 0, SilkConstants.RESAMPLER_ORDER_FIR_12);

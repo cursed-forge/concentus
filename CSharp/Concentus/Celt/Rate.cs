@@ -673,10 +673,10 @@ namespace Concentus.Celt
                 }
             }
 
-            int[] bits1 = new int[len];
-            int[] bits2 = new int[len];
-            int[] thresh = new int[len];
-            int[] trim_offset = new int[len];
+            int[] bits1 = ScratchArena.Rent<int>(len);
+            int[] bits2 = ScratchArena.Rent<int>(len);
+            int[] thresh = ScratchArena.Rent<int>(len);
+            int[] trim_offset = ScratchArena.Rent<int>(len);
 
             for (j = start; j < end; j++)
             {
@@ -797,10 +797,10 @@ namespace Concentus.Celt
                 }
             }
 
-            int[] bits1 = new int[len];
-            int[] bits2 = new int[len];
-            int[] thresh = new int[len];
-            int[] trim_offset = new int[len];
+            int[] bits1 = ScratchArena.Rent<int>(len);
+            int[] bits2 = ScratchArena.Rent<int>(len);
+            int[] thresh = ScratchArena.Rent<int>(len);
+            int[] trim_offset = ScratchArena.Rent<int>(len);
 
             for (j = start; j < end; j++)
             {

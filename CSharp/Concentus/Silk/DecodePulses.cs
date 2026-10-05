@@ -54,8 +54,8 @@ namespace Concentus.Silk
             )
         {
             int i, j, k, iter, abs_q, nLS, RateLevelIndex;
-            int[] sum_pulses = new int[SilkConstants.MAX_NB_SHELL_BLOCKS];
-            int[] nLshifts = new int[SilkConstants.MAX_NB_SHELL_BLOCKS];
+            int[] sum_pulses = ScratchArena.Rent<int>(SilkConstants.MAX_NB_SHELL_BLOCKS);
+            int[] nLshifts = ScratchArena.Rent<int>(SilkConstants.MAX_NB_SHELL_BLOCKS);
             int pulses_ptr;
 
             /*********************/

@@ -55,10 +55,10 @@ namespace Concentus.Silk
             int x_buf, x_buf_ptr;
             short[] Wsig;
             int Wsig_ptr;
-            int[] auto_corr = new int[SilkConstants.MAX_FIND_PITCH_LPC_ORDER + 1];
-            short[] rc_Q15 = new short[SilkConstants.MAX_FIND_PITCH_LPC_ORDER];
-            int[] A_Q24 = new int[SilkConstants.MAX_FIND_PITCH_LPC_ORDER];
-            short[] A_Q12 = new short[SilkConstants.MAX_FIND_PITCH_LPC_ORDER];
+            int[] auto_corr = ScratchArena.Rent<int>(SilkConstants.MAX_FIND_PITCH_LPC_ORDER + 1);
+            short[] rc_Q15 = ScratchArena.Rent<short>(SilkConstants.MAX_FIND_PITCH_LPC_ORDER);
+            int[] A_Q24 = ScratchArena.Rent<int>(SilkConstants.MAX_FIND_PITCH_LPC_ORDER);
+            short[] A_Q12 = ScratchArena.Rent<short>(SilkConstants.MAX_FIND_PITCH_LPC_ORDER);
 
 
             /******************************************/
@@ -77,7 +77,7 @@ namespace Concentus.Silk
 
             /* Calculate windowed signal */
 
-            Wsig = new short[psEnc.pitch_LPC_win_length];
+            Wsig = ScratchArena.Rent<short>(psEnc.pitch_LPC_win_length);
 
             /* First LA_LTP samples */
             x_buf_ptr = x_buf + buf_len - psEnc.pitch_LPC_win_length;
@@ -136,9 +136,9 @@ namespace Concentus.Silk
                 /*****************************************/
                 /* Call pitch estimator                  */
                 /*****************************************/
-                BoxedValueShort boxed_lagIndex = new BoxedValueShort(psEnc.indices.lagIndex);
-                BoxedValueSbyte boxed_contourIndex = new BoxedValueSbyte(psEnc.indices.contourIndex);
-                BoxedValueInt boxed_LTPcorr = new BoxedValueInt(psEnc.LTPCorr_Q15);
+                BoxedValueShort boxed_lagIndex = ScratchArena.BoxShort(psEnc.indices.lagIndex);
+                BoxedValueSbyte boxed_contourIndex = ScratchArena.BoxSbyte(psEnc.indices.contourIndex);
+                BoxedValueInt boxed_LTPcorr = ScratchArena.BoxInt(psEnc.LTPCorr_Q15);
                 if (PitchAnalysisCore.silk_pitch_analysis_core(res, psEncCtrl.pitchL, boxed_lagIndex, boxed_contourIndex,
                         boxed_LTPcorr, psEnc.prevLag, psEnc.pitchEstimationThreshold_Q16,
                         (int)thrhld_Q13, psEnc.fs_kHz, psEnc.pitchEstimationComplexity, psEnc.nb_subfr) == 0)

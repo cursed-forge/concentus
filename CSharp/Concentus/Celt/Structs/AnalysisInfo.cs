@@ -45,7 +45,7 @@ namespace Concentus.Celt.Structs
         internal float music_prob = 0;
         internal int bandwidth = 0;
 
-        internal AnalysisInfo()
+        public AnalysisInfo()
         {
         }
 
@@ -58,6 +58,13 @@ namespace Concentus.Celt.Structs
             this.activity = other.activity;
             this.music_prob = other.music_prob;
             this.bandwidth = other.bandwidth;
+        }
+
+        // CursedForge fork: makes a pooled instance (ScratchArena) equal to a new one.
+        internal AnalysisInfo ScratchReset()
+        {
+            Reset();
+            return this;
         }
 
         internal void Reset()

@@ -199,7 +199,7 @@ namespace Concentus.Silk
         {
             int i, k;
             int exc_buf_ptr = 0;
-            short[] exc_buf = new short[2 * subfr_length];
+            short[] exc_buf = ScratchArena.Rent<short>(2 * subfr_length);
 
             /* Find random noise component */
             /* Scale previous excitation signal */
@@ -235,10 +235,10 @@ namespace Concentus.Silk
             short rand_scale_Q14;
             short[] B_Q14;
             int sLPC_Q14_ptr;
-            short[] sLTP = new short[psDec.ltp_mem_length];
-            int[] sLTP_Q14 = new int[psDec.ltp_mem_length + psDec.frame_length];
+            short[] sLTP = ScratchArena.Rent<short>(psDec.ltp_mem_length);
+            int[] sLTP_Q14 = ScratchArena.Rent<int>(psDec.ltp_mem_length + psDec.frame_length);
             PLCStruct psPLC = psDec.sPLC;
-            int[] prevGain_Q10 = new int[2];
+            int[] prevGain_Q10 = ScratchArena.Rent<int>(2);
 
             prevGain_Q10[0] = Inlines.silk_RSHIFT(psPLC.prevGain_Q16[0], 6);
             prevGain_Q10[1] = Inlines.silk_RSHIFT(psPLC.prevGain_Q16[1], 6);

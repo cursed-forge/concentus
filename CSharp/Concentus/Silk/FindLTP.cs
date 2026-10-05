@@ -77,20 +77,20 @@ namespace Concentus.Silk
 
             int regu;
             int WLTP_ptr;
-            int[] b_Q16 = new int[SilkConstants.LTP_ORDER];
-            int[] delta_b_Q14 = new int[SilkConstants.LTP_ORDER];
-            int[] d_Q14 = new int[SilkConstants.MAX_NB_SUBFR];
-            int[] nrg = new int[SilkConstants.MAX_NB_SUBFR];
+            int[] b_Q16 = ScratchArena.Rent<int>(SilkConstants.LTP_ORDER);
+            int[] delta_b_Q14 = ScratchArena.Rent<int>(SilkConstants.LTP_ORDER);
+            int[] d_Q14 = ScratchArena.Rent<int>(SilkConstants.MAX_NB_SUBFR);
+            int[] nrg = ScratchArena.Rent<int>(SilkConstants.MAX_NB_SUBFR);
             int g_Q26;
-            int[] w = new int[SilkConstants.MAX_NB_SUBFR];
+            int[] w = ScratchArena.Rent<int>(SilkConstants.MAX_NB_SUBFR);
             int WLTP_max, max_abs_d_Q14, max_w_bits;
 
             int temp32, denom32;
             int extra_shifts;
             int rr_shifts, maxRshifts, maxRshifts_wxtra, LZs;
             int LPC_res_nrg, LPC_LTP_res_nrg, div_Q16;
-            int[] Rr = new int[SilkConstants.LTP_ORDER];
-            int[] rr = new int[SilkConstants.MAX_NB_SUBFR];
+            int[] Rr = ScratchArena.Rent<int>(SilkConstants.LTP_ORDER);
+            int[] rr = ScratchArena.Rent<int>(SilkConstants.MAX_NB_SUBFR);
             int wd, m_Q12;
 
             b_Q14_ptr = 0;
@@ -110,7 +110,7 @@ namespace Concentus.Silk
                     rr_shifts += (LTP_CORRS_HEAD_ROOM - LZs);
                 }
                 corr_rshifts[k] = rr_shifts;
-                BoxedValueInt boxed_shifts = new BoxedValueInt(corr_rshifts[k]);
+                BoxedValueInt boxed_shifts = ScratchArena.BoxInt(corr_rshifts[k]);
                 CorrelateMatrix.silk_corrMatrix(r_lpc, lag_ptr, subfr_length, SilkConstants.LTP_ORDER, LTP_CORRS_HEAD_ROOM, WLTP, WLTP_ptr, boxed_shifts);  /* WLTP_ptr in Q( -corr_rshifts[ k ] ) */
                 corr_rshifts[k] = boxed_shifts.Val;
 

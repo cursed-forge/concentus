@@ -49,19 +49,19 @@ namespace Concentus.Silk
         )
         {
             int k, subfr_length;
-            int[] a_Q16 = new int[SilkConstants.MAX_LPC_ORDER];
+            int[] a_Q16 = ScratchArena.Rent<int>(SilkConstants.MAX_LPC_ORDER);
             int isInterpLower, shift;
             int res_nrg0, res_nrg1;
             int rshift0, rshift1;
-            BoxedValueInt scratch_box1 = new BoxedValueInt();
-            BoxedValueInt scratch_box2 = new BoxedValueInt();
+            BoxedValueInt scratch_box1 = ScratchArena.BoxInt(0);
+            BoxedValueInt scratch_box2 = ScratchArena.BoxInt(0);
 
             /* Used only for LSF interpolation */
-            int[] a_tmp_Q16 = new int[SilkConstants.MAX_LPC_ORDER];
+            int[] a_tmp_Q16 = ScratchArena.Rent<int>(SilkConstants.MAX_LPC_ORDER);
             int res_nrg_interp, res_nrg, res_tmp_nrg;
             int res_nrg_interp_Q, res_nrg_Q, res_tmp_nrg_Q;
-            short[] a_tmp_Q12 = new short[SilkConstants.MAX_LPC_ORDER];
-            short[] NLSF0_Q15 = new short[SilkConstants.MAX_LPC_ORDER];
+            short[] a_tmp_Q12 = ScratchArena.Rent<short>(SilkConstants.MAX_LPC_ORDER);
+            short[] NLSF0_Q15 = ScratchArena.Rent<short>(SilkConstants.MAX_LPC_ORDER);
             
             subfr_length = psEncC.subfr_length + psEncC.predictLPCOrder;
 
@@ -101,7 +101,7 @@ namespace Concentus.Silk
                 /* Convert to NLSFs */
                 NLSF.silk_A2NLSF(NLSF_Q15, a_tmp_Q16, psEncC.predictLPCOrder);
 
-               LPC_res = new short[2 * subfr_length];
+               LPC_res = ScratchArena.Rent<short>(2 * subfr_length);
 
                 /* Search over interpolation indices to find the one with lowest residual energy */
                 for (k = 3; k >= 0; k--)

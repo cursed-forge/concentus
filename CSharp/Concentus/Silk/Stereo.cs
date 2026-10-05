@@ -52,7 +52,7 @@ namespace Concentus.Silk
             int[] pred_Q13)
         {
             int n;
-            int[][] ix = Arrays.InitTwoDimensionalArray<int>(2, 3);
+            int[][] ix = ScratchArena.Rent2D<int>(2, 3);
             int low_Q13, step_Q13;
 
             // Entropy decoding
@@ -215,10 +215,10 @@ namespace Concentus.Silk
         {
             int n, is10msFrame, denom_Q16, delta0_Q13, delta1_Q13;
             int sum, diff, smooth_coef_Q16, pred0_Q13, pred1_Q13;
-            int[] pred_Q13 = new int[2];
+            int[] pred_Q13 = ScratchArena.Rent<int>(2);
             int frac_Q16, frac_3_Q16, min_mid_rate_bps, width_Q14, w_Q24, deltaw_Q24;
-            BoxedValueInt LP_ratio_Q14 = new BoxedValueInt();
-            BoxedValueInt HP_ratio_Q14 = new BoxedValueInt();
+            BoxedValueInt LP_ratio_Q14 = ScratchArena.BoxInt(0);
+            BoxedValueInt HP_ratio_Q14 = ScratchArena.BoxInt(0);
             short[] side;
             short[] LP_mid;
             short[] HP_mid;
@@ -226,7 +226,7 @@ namespace Concentus.Silk
             short[] HP_side;
             int mid = x1_ptr - 2;
 
-            side = new short[frame_length + 2];
+            side = ScratchArena.Rent<short>(frame_length + 2);
 
             /* Convert to basic mid/side signals */
             for (n = 0; n < frame_length + 2; n++)
@@ -244,8 +244,8 @@ namespace Concentus.Silk
             Arrays.MemCopy(side, frame_length, state.sSide, 0, 2);
 
             /* LP and HP filter mid signal */
-            LP_mid = new short[frame_length];
-            HP_mid = new short[frame_length];
+            LP_mid = ScratchArena.Rent<short>(frame_length);
+            HP_mid = ScratchArena.Rent<short>(frame_length);
             for (n = 0; n < frame_length; n++)
             {
                 sum = Inlines.silk_RSHIFT_ROUND(Inlines.silk_ADD_LSHIFT32(x1[mid + n] + x1[mid + n + 2], x1[mid + n + 1], 1), 2);
@@ -254,8 +254,8 @@ namespace Concentus.Silk
             }
 
             /* LP and HP filter side signal */
-            LP_side = new short[frame_length];
-            HP_side = new short[frame_length];
+            LP_side = ScratchArena.Rent<short>(frame_length);
+            HP_side = ScratchArena.Rent<short>(frame_length);
             for (n = 0; n < frame_length; n++)
             {
                 sum = Inlines.silk_RSHIFT_ROUND(Inlines.silk_ADD_LSHIFT32(side[n] + side[n + 2], side[n + 1], 1), 2);

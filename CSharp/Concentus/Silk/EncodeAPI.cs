@@ -132,7 +132,7 @@ namespace Concentus.Silk
             int nSamplesFromInput = 0, nSamplesFromInputMax;
             int speech_act_thr_for_switch_Q8;
             int TargetRate_bps, channelRate_bps, LBRR_symbol, sum;
-            int[] MStargetRates_bps = new int[2];
+            int[] MStargetRates_bps = ScratchArena.Rent<int>(2);
             short[] buf;
             int transition, curr_block, tot_blocks;
             nBytesOut.Val = 0;
@@ -256,7 +256,7 @@ namespace Concentus.Silk
                                        psEnc.state_Fxx[0].API_fs_Hz,
                                    (short)(psEnc.state_Fxx[0].fs_kHz * 1000));
 
-            buf = new short[nSamplesFromInputMax];
+            buf = ScratchArena.Rent<short>(nSamplesFromInputMax);
 
             int samplesIn_ptr = 0;
             while (true)
@@ -377,7 +377,7 @@ namespace Concentus.Silk
                     if (psEnc.state_Fxx[0].nFramesEncoded == 0 && prefillFlag == 0)
                     {
                         /* Create space at start of payload for VAD and FEC flags */
-                        byte[] iCDF = { 0, 0 };
+                        byte[] iCDF = ScratchArena.Rent<byte>(2);
                         iCDF[0] = (byte)(256 - Inlines.silk_RSHIFT(256, (psEnc.state_Fxx[0].nFramesPerPacket + 1) * encControl.nChannelsInternal));
                         psRangeEnc.enc_icdf(encodedDataOut, 0, iCDF, 8);
 
@@ -483,7 +483,7 @@ namespace Concentus.Silk
                     /* Convert Left/Right to Mid/Side */
                     if (encControl.nChannelsInternal == 2)
                     {
-                        BoxedValueSbyte midOnlyFlagBoxed = new BoxedValueSbyte(psEnc.sStereo.mid_only_flags[psEnc.state_Fxx[0].nFramesEncoded]);
+                        BoxedValueSbyte midOnlyFlagBoxed = ScratchArena.BoxSbyte(psEnc.sStereo.mid_only_flags[psEnc.state_Fxx[0].nFramesEncoded]);
                         Stereo.silk_stereo_LR_to_MS(psEnc.sStereo,
                             psEnc.state_Fxx[0].inputBuf,
                             2,

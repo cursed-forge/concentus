@@ -60,6 +60,13 @@ namespace Concentus.Silk
         private class silk_pe_stage3_vals
         {
             internal readonly int[] Values = new int[SilkConstants.PE_NB_STAGE3_LAGS];
+
+            // CursedForge fork: makes a pooled instance (ScratchArena) equal to a new one.
+            internal silk_pe_stage3_vals ScratchReset()
+            {
+                Array.Clear(Values, 0, Values.Length);
+                return this;
+            }
         }
 
         /*************************************************************/
@@ -81,7 +88,7 @@ namespace Concentus.Silk
         {
             short[] frame_8kHz;
             short[] frame_4kHz;
-            int[] filt_state = new int[6];
+            int[] filt_state = ScratchArena.Rent<int>(6);
             short[] input_frame_ptr;
             int i, k, d, j;
             short[] C;
@@ -92,12 +99,12 @@ namespace Concentus.Silk
             int target_ptr;
             int cross_corr, normalizer, energy, shift, energy_basis, energy_target;
             int Cmax, length_d_srch, length_d_comp;
-            int[] d_srch = new int[SilkConstants.PE_D_SRCH_LENGTH];
+            int[] d_srch = ScratchArena.Rent<int>(SilkConstants.PE_D_SRCH_LENGTH);
             short[] d_comp;
             int sum, threshold, lag_counter;
             int CBimax, CBimax_new, CBimax_old, lag, start_lag, end_lag, lag_new;
             int CCmax, CCmax_b, CCmax_new_b, CCmax_new;
-            int[] CC = new int[SilkConstants.PE_NB_CBKS_STAGE2_EXT];
+            int[] CC = ScratchArena.Rent<int>(SilkConstants.PE_NB_CBKS_STAGE2_EXT);
             silk_pe_stage3_vals[] energies_st3;
             silk_pe_stage3_vals[] cross_corr_st3;
             int frame_length, frame_length_8kHz, frame_length_4kHz;
@@ -128,7 +135,7 @@ namespace Concentus.Silk
             max_lag = SilkConstants.PE_MAX_LAG_MS * Fs_kHz - 1;
 
             /* Resample from input sampled at Fs_kHz to 8 kHz */
-            frame_8kHz = new short[frame_length_8kHz];
+            frame_8kHz = ScratchArena.Rent<short>(frame_length_8kHz);
             if (Fs_kHz == 16)
             {
                 Arrays.MemSetInt(filt_state, 0, 2);
@@ -146,7 +153,7 @@ namespace Concentus.Silk
 
             /* Decimate again to 4 kHz */
             Arrays.MemSetInt(filt_state, 0, 2); /* Set state to zero */
-            frame_4kHz = new short[frame_length_4kHz];
+            frame_4kHz = ScratchArena.Rent<short>(frame_length_4kHz);
             Resampler.silk_resampler_down2(filt_state, frame_4kHz, frame_8kHz, frame_length_8kHz);
 
             /* Low-pass filter */
@@ -174,8 +181,8 @@ namespace Concentus.Silk
             /******************************************************************************
             * FIRST STAGE, operating in 4 khz
             ******************************************************************************/
-            C = new short[nb_subfr * CSTRIDE_8KHZ];
-            xcorr32 = new int[MAX_LAG_4KHZ - MIN_LAG_4KHZ + 1];
+            C = ScratchArena.Rent<short>(nb_subfr * CSTRIDE_8KHZ);
+            xcorr32 = ScratchArena.Rent<int>(MAX_LAG_4KHZ - MIN_LAG_4KHZ + 1);
             Arrays.MemSetShort(C, 0, (nb_subfr >> 1) * CSTRIDE_4KHZ);
             target = frame_4kHz;
             target_ptr = Inlines.silk_LSHIFT(SF_LENGTH_4KHZ, 2);
@@ -267,7 +274,7 @@ namespace Concentus.Silk
             }
             Inlines.OpusAssert(length_d_srch > 0);
 
-            d_comp = new short[D_COMP_STRIDE];
+            d_comp = ScratchArena.Rent<short>(D_COMP_STRIDE);
             for (i = D_COMP_MIN; i < D_COMP_MAX; i++)
             {
                 d_comp[i - D_COMP_MIN] = 0;
@@ -488,7 +495,7 @@ namespace Concentus.Silk
                 SumSqrShift.silk_sum_sqr_shift(out energy, out shift, frame, frame_length);
                 if (shift > 0)
                 {
-                    scratch_mem = new short[frame_length];
+                    scratch_mem = ScratchArena.Rent<short>(frame_length);
                     /* Move signal to scratch mem because the input signal should be unchanged */
                     shift = Inlines.silk_RSHIFT(shift, 1);
                     for (i = 0; i < frame_length; i++)
@@ -542,12 +549,12 @@ namespace Concentus.Silk
                 }
 
                 /* Calculate the correlations and energies needed in stage 3 */
-                energies_st3 = new silk_pe_stage3_vals[nb_subfr * nb_cbk_search];
-                cross_corr_st3 = new silk_pe_stage3_vals[nb_subfr * nb_cbk_search];
+                energies_st3 = ScratchArena.Rent<silk_pe_stage3_vals>(nb_subfr * nb_cbk_search);
+                cross_corr_st3 = ScratchArena.Rent<silk_pe_stage3_vals>(nb_subfr * nb_cbk_search);
                 for (int c = 0; c < nb_subfr * nb_cbk_search; c++)
                 {
-                    energies_st3[c] = new silk_pe_stage3_vals(); // fixme: these can be replaced with a linearized array probably, or at least a struct
-                    cross_corr_st3[c] = new silk_pe_stage3_vals();
+                    energies_st3[c] = ScratchArena.RentObject<silk_pe_stage3_vals>().ScratchReset(); // fixme: these can be replaced with a linearized array probably, or at least a struct
+                    cross_corr_st3[c] = ScratchArena.RentObject<silk_pe_stage3_vals>().ScratchReset();
                 }
                 silk_P_Ana_calc_corr_st3(cross_corr_st3, input_frame_ptr, start_lag, sf_length, nb_subfr, complexity);
                 silk_P_Ana_calc_energy_st3(energies_st3, input_frame_ptr, start_lag, sf_length, nb_subfr, complexity);
@@ -666,8 +673,8 @@ namespace Concentus.Silk
                 Lag_CB_ptr = Tables.silk_CB_lags_stage3_10_ms;
                 nb_cbk_search = SilkConstants.PE_NB_CBKS_STAGE3_10MS;
             }
-            scratch_mem = new int[SCRATCH_SIZE];
-            xcorr32 = new int[SCRATCH_SIZE];
+            scratch_mem = ScratchArena.Rent<int>(SCRATCH_SIZE);
+            xcorr32 = ScratchArena.Rent<int>(SCRATCH_SIZE);
 
             target_ptr = Inlines.silk_LSHIFT(sf_length, 2); /* Pointer to middle of frame */
             for (k = 0; k < nb_subfr; k++)
@@ -742,7 +749,7 @@ namespace Concentus.Silk
                 Lag_CB_ptr = Tables.silk_CB_lags_stage3_10_ms;
                 nb_cbk_search = SilkConstants.PE_NB_CBKS_STAGE3_10MS;
             }
-            scratch_mem = new int[SCRATCH_SIZE];
+            scratch_mem = ScratchArena.Rent<int>(SCRATCH_SIZE);
 
             target_ptr = Inlines.silk_LSHIFT(sf_length, 2);
             for (k = 0; k < nb_subfr; k++)

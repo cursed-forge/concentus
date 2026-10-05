@@ -176,10 +176,10 @@ namespace Concentus.Silk
             int SNR_adj_dB_Q7, HarmBoost_Q16, HarmShapeGain_Q16, Tilt_Q16, tmp32;
             int nrg, pre_nrg_Q30, log_energy_Q7, log_energy_prev_Q7, energy_variation_Q7;
             int delta_Q16, BWExp1_Q16, BWExp2_Q16, gain_mult_Q16, gain_add_Q16, strength_Q16, b_Q8;
-            int[] auto_corr = new int[SilkConstants.MAX_SHAPE_LPC_ORDER + 1];
-            int[] refl_coef_Q16 = new int[SilkConstants.MAX_SHAPE_LPC_ORDER];
-            int[] AR1_Q24 = new int[SilkConstants.MAX_SHAPE_LPC_ORDER];
-            int[] AR2_Q24 = new int[SilkConstants.MAX_SHAPE_LPC_ORDER];
+            int[] auto_corr = ScratchArena.Rent<int>(SilkConstants.MAX_SHAPE_LPC_ORDER + 1);
+            int[] refl_coef_Q16 = ScratchArena.Rent<int>(SilkConstants.MAX_SHAPE_LPC_ORDER);
+            int[] AR1_Q24 = ScratchArena.Rent<int>(SilkConstants.MAX_SHAPE_LPC_ORDER);
+            int[] AR2_Q24 = ScratchArena.Rent<int>(SilkConstants.MAX_SHAPE_LPC_ORDER);
             short[] x_windowed;
             int pitch_res_ptr2;
             int x_ptr2;
@@ -294,7 +294,7 @@ namespace Concentus.Silk
             /********************************************/
             /* Compute noise shaping AR coefs and gains */
             /********************************************/
-            x_windowed = new short[psEnc.shapeWinLength];
+            x_windowed = ScratchArena.Rent<short>(psEnc.shapeWinLength);
             for (k = 0; k < psEnc.nb_subfr; k++)
             {
                 /* Apply window: sine slope followed by flat part followed by cosine slope */

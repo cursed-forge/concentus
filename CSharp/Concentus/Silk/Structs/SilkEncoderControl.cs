@@ -75,6 +75,13 @@ namespace Concentus.Silk.Structs
         internal readonly int[] GainsUnq_Q16 = new int[SilkConstants.MAX_NB_SUBFR];
         internal sbyte lastGainIndexPrev = 0;
 
+        // CursedForge fork: makes a pooled instance (ScratchArena) equal to a new one.
+        internal SilkEncoderControl ScratchReset()
+        {
+            Reset();
+            return this;
+        }
+
         internal void Reset()
         {
             Arrays.MemSetInt(Gains_Q16, 0, SilkConstants.MAX_NB_SUBFR);

@@ -50,6 +50,13 @@ namespace Concentus.Silk.Structs
         internal readonly short[] LTPCoef_Q14 = new short[SilkConstants.LTP_ORDER * SilkConstants.MAX_NB_SUBFR];
         internal int LTP_scale_Q14 = 0;
 
+        // CursedForge fork: makes a pooled instance (ScratchArena) equal to a new one.
+        internal SilkDecoderControl ScratchReset()
+        {
+            Reset();
+            return this;
+        }
+
         internal void Reset()
         {
             Arrays.MemSetInt(pitchL, 0, SilkConstants.MAX_NB_SUBFR);

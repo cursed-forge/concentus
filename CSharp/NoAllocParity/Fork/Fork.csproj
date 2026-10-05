@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- CursedForge fork: the same check program, built against this fork.
+       Pass -p:ConcentusTfm=netstandard2.0 to check the build Unity uses
+       (netstandard2.0 compiles with C# 7.3, which does not cache method-group
+       delegates). The default checks the net8.0 build. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <Nullable>disable</Nullable>
+    <NoWarn>CS0618</NoWarn>
+    <IsPackable>false</IsPackable>
+    <ConcentusTfm Condition="'$(ConcentusTfm)' == ''">net8.0</ConcentusTfm>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\ParityProgram.cs" />
+    <ProjectReference Include="..\..\Concentus\Concentus.csproj"
+                      SetConfiguration="Configuration=Release"
+                      SetTargetFramework="TargetFramework=$(ConcentusTfm)" />
+  </ItemGroup>
+
+</Project>

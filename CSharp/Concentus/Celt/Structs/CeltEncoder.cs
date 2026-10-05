@@ -260,7 +260,7 @@ namespace Concentus.Celt.Structs
               int prefilter_tapset, out int pitch, out int gain, out int qgain, int enabled, int nbAvailableBytes)
         {
             int c;
-            int[][] pre = new int[CC][];
+            int[][] pre = ScratchArena.Rent<int[]>(CC);
             CeltMode mode; // [porting note] pointer
             int pitch_index;
             int gain1;
@@ -273,7 +273,7 @@ namespace Concentus.Celt.Structs
             overlap = mode.overlap;
             for (int z = 0; z < CC; z++)
             {
-                pre[z] = new int[N + CeltConstants.COMBFILTER_MAXPERIOD];
+                pre[z] = ScratchArena.Rent<int>(N + CeltConstants.COMBFILTER_MAXPERIOD);
             }
 
             c = 0;
@@ -285,7 +285,7 @@ namespace Concentus.Celt.Structs
 
             if (enabled != 0)
             {
-                int[] pitch_buf = new int[(CeltConstants.COMBFILTER_MAXPERIOD + N) >> 1];
+                int[] pitch_buf = ScratchArena.Rent<int>((CeltConstants.COMBFILTER_MAXPERIOD + N) >> 1);
 
                 Concentus.Celt.Pitch.pitch_downsample(pre, pitch_buf, CeltConstants.COMBFILTER_MAXPERIOD + N, CC);
                 /* Don't search for the fir last 1.5 octave of the range because
@@ -512,7 +512,7 @@ namespace Concentus.Celt.Structs
 
             if (enc == null)
             {
-                enc = new EntropyCoder();
+                enc = ScratchArena.RentObject<EntropyCoder>().ScratchReset();
                 enc.enc_init((uint)nbCompressedBytes);
             }
 
@@ -548,7 +548,7 @@ namespace Concentus.Celt.Structs
             if (effEnd > mode.effEBands)
                 effEnd = mode.effEBands;
 
-            input = Arrays.InitTwoDimensionalArray<int>(CC, N + overlap);
+            input = ScratchArena.Rent2D<int>(CC, N + overlap);
 
             sample_max = Inlines.MAX32(this.overlap_max, Inlines.celt_maxabs32(pcm, pcm_ptr, C * (N - overlap) / this.upsample));
             this.overlap_max = Inlines.celt_maxabs32(pcm, pcm_ptr + (C * (N - overlap) / this.upsample), C * overlap / this.upsample);
@@ -636,12 +636,12 @@ namespace Concentus.Celt.Structs
                 transient_got_disabled = 1;
             }
 
-            freq = Arrays.InitTwoDimensionalArray<int>(CC, N); /*< Interleaved signal MDCTs */
-            bandE = Arrays.InitTwoDimensionalArray<int>(CC, nbEBands);
-            bandLogE = Arrays.InitTwoDimensionalArray<int>(CC, nbEBands);
+            freq = ScratchArena.Rent2D<int>(CC, N); /*< Interleaved signal MDCTs */
+            bandE = ScratchArena.Rent2D<int>(CC, nbEBands);
+            bandLogE = ScratchArena.Rent2D<int>(CC, nbEBands);
 
             secondMdct = (shortBlocks != 0 && this.complexity >= 8) ? 1 : 0;
-            bandLogE2 = Arrays.InitTwoDimensionalArray<int>(CC, nbEBands);
+            bandLogE2 = ScratchArena.Rent2D<int>(CC, nbEBands);
             //Arrays.MemSetInt(bandLogE2, 0, C * nbEBands); // not explicitly needed
             if (secondMdct != 0)
             {
@@ -677,7 +677,7 @@ namespace Concentus.Celt.Structs
 
             QuantizeBands.amp2Log2(mode, effEnd, end, bandE, bandLogE, C);
 
-            surround_dynalloc = new int[C * nbEBands];
+            surround_dynalloc = ScratchArena.Rent<int>(C * nbEBands);
             //Arrays.MemSetInt(surround_dynalloc, 0, end); // not strictly needed
             /* This computes how much masking takes place between surround channels */
             if (start == 0 && this.energy_mask != null && this.lfe == 0)
@@ -809,12 +809,12 @@ namespace Concentus.Celt.Structs
             if (LM > 0 && enc.tell() + 3 <= total_bits)
                 enc.enc_bit_logp(compressed.Slice(compressed_ptr), isTransient, 3);
 
-            X = Arrays.InitTwoDimensionalArray<int>(C, N);         /*< Interleaved normalised MDCTs */
+            X = ScratchArena.Rent2D<int>(C, N);         /*< Interleaved normalised MDCTs */
 
             /* Band normalisation */
             Bands.normalise_bands(mode, freq, X, bandE, effEnd, C, M);
 
-            tf_res = new int[nbEBands];
+            tf_res = ScratchArena.Rent<int>(nbEBands);
             /* Disable variable tf resolution for hybrid and at very low bitrate */
             if (effectiveBytes >= 15 * C && start == 0 && this.complexity >= 2 && this.lfe == 0)
             {
@@ -840,7 +840,7 @@ namespace Concentus.Celt.Structs
                 tf_select = 0;
             }
 
-            error = Arrays.InitTwoDimensionalArray<int>(C, nbEBands);
+            error = ScratchArena.Rent2D<int>(C, nbEBands);
             QuantizeBands.quant_coarse_energy(mode, start, end, effEnd, bandLogE,
                   this.oldBandE, (uint)total_bits, error, enc, compressed.Slice(compressed_ptr),
                   C, LM, nbAvailableBytes, this.force_intra,
@@ -874,7 +874,7 @@ namespace Concentus.Celt.Structs
                 enc.enc_icdf(compressed.Slice(compressed_ptr), this.spread_decision, Tables.spread_icdf, 5);
             }
 
-            offsets = new int[nbEBands];
+            offsets = ScratchArena.Rent<int>(nbEBands);
 
             maxDepth = CeltCommon.dynalloc_analysis(bandLogE, bandLogE2, nbEBands, start, end, C, offsets,
                   this.lsb_depth, mode.logN, isTransient, this.vbr, this.constrained_vbr,
@@ -883,7 +883,7 @@ namespace Concentus.Celt.Structs
             /* For LFE, everything interesting is in the first band */
             if (this.lfe != 0)
                 offsets[0] = Inlines.IMIN(8, effectiveBytes / 3);
-            cap = new int[nbEBands];
+            cap = ScratchArena.Rent<int>(nbEBands);
             CeltCommon.init_caps(mode, cap, LM, C);
 
             dynalloc_logp = 6;
@@ -1039,9 +1039,9 @@ namespace Concentus.Celt.Structs
             }
 
             /* Bit allocation */
-            fine_quant = new int[nbEBands];
-            pulses = new int[nbEBands];
-            fine_priority = new int[nbEBands];
+            fine_quant = ScratchArena.Rent<int>(nbEBands);
+            pulses = ScratchArena.Rent<int>(nbEBands);
+            fine_priority = ScratchArena.Rent<int>(nbEBands);
 
             /* bits =    packet size                                     - where we are                        - safety*/
             bits = (((int)nbCompressedBytes * 8) << EntropyCoder.BITRES) - (int)enc.tell_frac() - 1;
@@ -1082,7 +1082,7 @@ namespace Concentus.Celt.Structs
             QuantizeBands.quant_fine_energy(mode, start, end, this.oldBandE, error, fine_quant, enc, compressed.Slice(compressed_ptr), C);
 
             /* Residual quantisation */
-            collapse_masks = new byte[C * nbEBands];
+            collapse_masks = ScratchArena.Rent<byte>(C * nbEBands);
             Bands.quant_all_bands_encode(1, mode, start, end, X[0], C == 2 ? X[1] : null, collapse_masks,
                   bandE, pulses, shortBlocks, this.spread_decision,
                   dual_stereo, this.intensity, tf_res, nbCompressedBytes * (8 << EntropyCoder.BITRES) - anti_collapse_rsv,

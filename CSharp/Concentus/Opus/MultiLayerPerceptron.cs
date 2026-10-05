@@ -75,7 +75,7 @@ namespace Concentus
         internal static void mlp_process(MLP m, float[] input, float[] output)
         {
             int j;
-            float[] hidden = new float[MAX_NEURONS];
+            float[] hidden = ScratchArena.Rent<float>(MAX_NEURONS);
             float[] W = m.weights;
             int W_ptr = 0;
 

@@ -443,7 +443,7 @@ namespace Concentus.Celt
                 for (i = 0; i < end; i++)
                 {
                     int j, N, tmp = 0;
-                    int[] tcount = { 0, 0, 0 };
+                    int[] tcount = ScratchArena.Rent<int>(3);
                     int[] x = X[c];
                     int x_ptr = M * eBands[i];
                     N = M * (eBands[i + 1] - eBands[i]);
@@ -544,7 +544,7 @@ namespace Concentus.Celt
             int i, j;
             int N;
             N = N0 * stride;
-            int[] tmp = new int[N];
+            int[] tmp = ScratchArena.Rent<int>(N);
 
             Inlines.OpusAssert(stride > 0);
             if (hadamard != 0)
@@ -578,7 +578,7 @@ namespace Concentus.Celt
             int i, j;
             int N;
             N = N0 * stride;
-            int[] tmp = new int[N];
+            int[] tmp = ScratchArena.Rent<int>(N);
 
             if (hadamard != 0)
             {
@@ -685,6 +685,22 @@ namespace Concentus.Celt
             internal int remaining_bits;
             internal int[][] bandE;
             internal uint seed;
+
+            // CursedForge fork: makes a pooled instance (ScratchArena) equal to a new one.
+            internal band_ctx ScratchReset()
+            {
+                encode = 0;
+                m = null;
+                i = 0;
+                intensity = 0;
+                spread = 0;
+                tf_change = 0;
+                ec = null;
+                remaining_bits = 0;
+                bandE = null;
+                seed = 0;
+                return this;
+            }
         };
 
         internal class split_ctx
@@ -695,6 +711,18 @@ namespace Concentus.Celt
             internal int delta;
             internal int itheta;
             internal int qalloc;
+
+            // CursedForge fork: makes a pooled instance (ScratchArena) equal to a new one.
+            internal split_ctx ScratchReset()
+            {
+                inv = 0;
+                imid = 0;
+                iside = 0;
+                delta = 0;
+                itheta = 0;
+                qalloc = 0;
+                return this;
+            }
         };
         
         internal static void compute_theta_decode(band_ctx ctx, split_ctx sctx, ReadOnlySpan<byte> encodedData,
@@ -1106,7 +1134,7 @@ namespace Concentus.Celt
                 int mbits, sbits, delta;
                 int itheta;
                 int qalloc;
-                split_ctx sctx = new split_ctx();
+                split_ctx sctx = ScratchArena.RentObject<split_ctx>().ScratchReset();
                 int next_lowband2 = 0;
                 int rebalance;
 
@@ -1284,7 +1312,7 @@ namespace Concentus.Celt
                 int mbits, sbits, delta;
                 int itheta;
                 int qalloc;
-                split_ctx sctx = new split_ctx();
+                split_ctx sctx = ScratchArena.RentObject<split_ctx>().ScratchReset();
                 int next_lowband2 = 0;
                 int rebalance;
 
@@ -1679,7 +1707,7 @@ namespace Concentus.Celt
             int mbits, sbits, delta;
             int itheta;
             int qalloc;
-            split_ctx sctx = new split_ctx(); // porting note: stack var
+            split_ctx sctx = ScratchArena.RentObject<split_ctx>().ScratchReset(); // porting note: stack var
             int orig_fill;
             EntropyCoder ec; //porting note: pointer
 
@@ -1844,7 +1872,7 @@ namespace Concentus.Celt
             int mbits, sbits, delta;
             int itheta;
             int qalloc;
-            split_ctx sctx = new split_ctx(); // porting note: stack var
+            split_ctx sctx = ScratchArena.RentObject<split_ctx>().ScratchReset(); // porting note: stack var
             int orig_fill;
             EntropyCoder ec; //porting note: pointer
 
@@ -2014,7 +2042,7 @@ namespace Concentus.Celt
             int C = Y_ != null ? 2 : 1;
             int norm_offset;
             int resynth = encode == 0 ? 1 : 0;
-            band_ctx ctx = new band_ctx(); // porting note: stack var
+            band_ctx ctx = ScratchArena.RentObject<band_ctx>().ScratchReset(); // porting note: stack var
 
             M = 1 << LM;
             B = (shortBlocks != 0) ? M : 1;
@@ -2022,7 +2050,7 @@ namespace Concentus.Celt
 
             /* No need to allocate norm for the last band because we don't need an
                output in that band. */
-            norm = new int[(C * (M * eBands[m.nbEBands - 1] - norm_offset))];
+            norm = ScratchArena.Rent<int>((C * (M * eBands[m.nbEBands - 1] - norm_offset)));
             norm2 = M * eBands[m.nbEBands - 1] - norm_offset;
 
             /* We can use the last band as scratch space because we don't need that
@@ -2263,7 +2291,7 @@ namespace Concentus.Celt
             int C = Y_ != null ? 2 : 1;
             int norm_offset;
             int resynth = encode == 0 ? 1 : 0;
-            band_ctx ctx = new band_ctx(); // porting note: stack var
+            band_ctx ctx = ScratchArena.RentObject<band_ctx>().ScratchReset(); // porting note: stack var
 
             M = 1 << LM;
             B = (shortBlocks != 0) ? M : 1;
@@ -2271,7 +2299,7 @@ namespace Concentus.Celt
 
             /* No need to allocate norm for the last band because we don't need an
                output in that band. */
-            norm = new int[(C * (M * eBands[m.nbEBands - 1] - norm_offset))];
+            norm = ScratchArena.Rent<int>((C * (M * eBands[m.nbEBands - 1] - norm_offset)));
             norm2 = M * eBands[m.nbEBands - 1] - norm_offset;
 
             /* We can use the last band as scratch space because we don't need that

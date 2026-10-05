@@ -56,6 +56,13 @@ namespace Concentus.Silk.Structs
         internal int prev_gain_Q16 = 0;
         internal int rewhite_flag = 0;
 
+        // CursedForge fork: makes a pooled instance (ScratchArena) equal to a new one.
+        internal SilkNSQState ScratchReset()
+        {
+            Reset();
+            return this;
+        }
+
         internal void Reset()
         {
             Arrays.MemSetShort(xq, 0, 2 * SilkConstants.MAX_FRAME_LENGTH);
@@ -104,6 +111,28 @@ namespace Concentus.Silk.Structs
             internal NSQ_del_dec_struct(int shapingOrder)
             {
                 sAR2_Q14 = new int[shapingOrder];
+            }
+
+            // CursedForge fork: the constructor of a pooled instance (ScratchArena).
+            public NSQ_del_dec_struct()
+            {
+            }
+
+            // CursedForge fork: makes a pooled instance equal to new NSQ_del_dec_struct(shapingOrder).
+            internal NSQ_del_dec_struct ScratchReset(int shapingOrder)
+            {
+                Array.Clear(sLPC_Q14, 0, sLPC_Q14.Length);
+                Array.Clear(RandState, 0, RandState.Length);
+                Array.Clear(Q_Q10, 0, Q_Q10.Length);
+                Array.Clear(Xq_Q14, 0, Xq_Q14.Length);
+                Array.Clear(Pred_Q15, 0, Pred_Q15.Length);
+                Array.Clear(Shape_Q14, 0, Shape_Q14.Length);
+                sAR2_Q14 = ScratchArena.Rent<int>(shapingOrder);
+                LF_AR_Q14 = 0;
+                Seed = 0;
+                SeedInit = 0;
+                RD_Q10 = 0;
+                return this;
             }
 
             internal void PartialCopyFrom(NSQ_del_dec_struct other, int q14Offset)
@@ -193,9 +222,9 @@ namespace Concentus.Silk.Structs
                 LSF_interpolation_flag = 1;
             }
 
-            sLTP_Q15 = new int[psEncC.ltp_mem_length + psEncC.frame_length];
-            sLTP = new short[psEncC.ltp_mem_length + psEncC.frame_length];
-            x_sc_Q10 = new int[psEncC.subfr_length];
+            sLTP_Q15 = ScratchArena.Rent<int>(psEncC.ltp_mem_length + psEncC.frame_length);
+            sLTP = ScratchArena.Rent<short>(psEncC.ltp_mem_length + psEncC.frame_length);
+            x_sc_Q10 = ScratchArena.Rent<int>(psEncC.subfr_length);
             /* Set up pointers to start of sub frame */
             this.sLTP_shp_buf_idx = psEncC.ltp_mem_length;
             this.sLTP_buf_idx = psEncC.ltp_mem_length;
@@ -619,10 +648,10 @@ namespace Concentus.Silk.Structs
             Inlines.OpusAssert(this.prev_gain_Q16 != 0);
 
             /* Initialize delayed decision states */
-            psDelDec = new NSQ_del_dec_struct[psEncC.nStatesDelayedDecision];
+            psDelDec = ScratchArena.Rent<NSQ_del_dec_struct>(psEncC.nStatesDelayedDecision);
             for (int c = 0; c < psEncC.nStatesDelayedDecision; c++)
             {
-                psDelDec[c] = new NSQ_del_dec_struct(psEncC.shapingLPCOrder);
+                psDelDec[c] = ScratchArena.RentObject<NSQ_del_dec_struct>().ScratchReset(psEncC.shapingLPCOrder);
             }
 
             for (k = 0; k < psEncC.nStatesDelayedDecision; k++)
@@ -665,10 +694,10 @@ namespace Concentus.Silk.Structs
                 LSF_interpolation_flag = 1;
             }
 
-            sLTP_Q15 = new int[psEncC.ltp_mem_length + psEncC.frame_length];
-            sLTP = new short[psEncC.ltp_mem_length + psEncC.frame_length];
-            x_sc_Q10 = new int[psEncC.subfr_length];
-            delayedGain_Q10 = new int[SilkConstants.DECISION_DELAY];
+            sLTP_Q15 = ScratchArena.Rent<int>(psEncC.ltp_mem_length + psEncC.frame_length);
+            sLTP = ScratchArena.Rent<short>(psEncC.ltp_mem_length + psEncC.frame_length);
+            x_sc_Q10 = ScratchArena.Rent<int>(psEncC.subfr_length);
+            delayedGain_Q10 = ScratchArena.Rent<int>(SilkConstants.DECISION_DELAY);
 
             /* Set up pointers to start of sub frame */
             pxq = psEncC.ltp_mem_length;
@@ -759,7 +788,7 @@ namespace Concentus.Silk.Structs
                     psIndices.signalType,
                     decisionDelay);
 
-                BoxedValueInt smpl_buf_idx_boxed = new BoxedValueInt(smpl_buf_idx);
+                BoxedValueInt smpl_buf_idx_boxed = ScratchArena.BoxInt(smpl_buf_idx);
                 silk_noise_shape_quantizer_del_dec(
                     psDelDec,
                     psIndices.signalType,
@@ -884,7 +913,7 @@ namespace Concentus.Silk.Structs
             int SS_right;
 
             Inlines.OpusAssert(nStatesDelayedDecision > 0);
-            sampleStates = new NSQ_sample_struct[2 * nStatesDelayedDecision];
+            sampleStates = ScratchArena.Rent<NSQ_sample_struct>(2 * nStatesDelayedDecision);
             // [porting note] structs must be initialized manually here
             for (int c = 0; c < 2 * nStatesDelayedDecision; c++)
             {

@@ -182,9 +182,9 @@ namespace Concentus.Celt
 
         internal static uint alg_quant(Span<int> X, int X_ptr, int N, int K, int spread, int B, EntropyCoder enc, Span<byte> encodedData)
         {
-            int[] y = new int[N];
-            int[] iy = new int[N];
-            int[] signx = new int[N];
+            int[] y = ScratchArena.Rent<int>(N);
+            int[] iy = ScratchArena.Rent<int>(N);
+            int[] signx = ScratchArena.Rent<int>(N);
             int i, j;
             int s;
             int pulsesLeft;
@@ -339,7 +339,7 @@ namespace Concentus.Celt
         {
             int Ryy;
             uint collapse_mask;
-            int[] iy = new int[N];
+            int[] iy = ScratchArena.Rent<int>(N);
             Inlines.OpusAssert(K > 0, "alg_unquant() needs at least one pulse");
             Inlines.OpusAssert(N > 1, "alg_unquant() needs at least two dimensions");
             Ryy = CWRS.decode_pulses(iy, N, K, dec, encodedData);

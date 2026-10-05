@@ -48,7 +48,7 @@ namespace Concentus.Silk
         )
         {
             int k, n;
-            int[] Atmp = new int[SilkConstants.SILK_MAX_ORDER_LPC];
+            int[] Atmp = ScratchArena.Rent<int>(SilkConstants.SILK_MAX_ORDER_LPC);
 
             for (k = 0; k < order; k++)
             {
@@ -72,7 +72,7 @@ namespace Concentus.Silk
         )
         {
             int k, n;
-            int[] Atmp = new int[SilkConstants.SILK_MAX_ORDER_LPC];
+            int[] Atmp = ScratchArena.Rent<int>(SilkConstants.SILK_MAX_ORDER_LPC);
 
             for (k = 0; k < order; k++)
             {
